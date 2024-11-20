@@ -1,16 +1,15 @@
 package client.messages;
 
-import java.util.Arrays;
-
 public final class BannedPhrasesMessage extends Message {
-    private final String[] bannedPhrases;
+    private final String bannedPhrases;
 
-    public BannedPhrasesMessage(String[] bannedPhrase) {
-        this.bannedPhrases = bannedPhrase;
+    public BannedPhrasesMessage(String bannedPhrases) {
+        this.bannedPhrases = bannedPhrases;
     }
 
     @Override
     public String getContent() {
-        return Arrays.toString(bannedPhrases);
+        return bannedPhrases;
     }
+
 }

@@ -12,6 +12,8 @@ public final class ChatMessage extends Message {
     public String getSender() {
         return sender;
     }
+
+    @Override
     public String getContent() {
         return content;
     }

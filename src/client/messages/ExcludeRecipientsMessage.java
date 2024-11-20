@@ -16,12 +16,15 @@ public final class ExcludeRecipientsMessage extends Message {
     public String getSender() {
         return sender;
     }
+
+    @Override
     public String getContent() {
         return content;
     }
     public Set<String> getExcludedRecipients() {
         if (excludedRecipients == null || excludedRecipients.isEmpty()) {
-            return Set.of(); // Return an empty set if no recipients are excluded
+            //empty set
+            return Set.of();
         }
         return Set.of(excludedRecipients.split(","));
     }

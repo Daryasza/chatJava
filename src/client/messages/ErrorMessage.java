@@ -6,6 +6,8 @@ public final class ErrorMessage extends Message {
     public ErrorMessage(String content) {
         this.content = content;
     }
+
+    @Override
     public String getContent() {
         return content;
     }

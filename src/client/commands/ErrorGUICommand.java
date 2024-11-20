@@ -3,13 +3,12 @@ package client.commands;
 import client.messages.ErrorMessage;
 import client.GUIManager;
 
-public class ErrorCommand implements Command {
+public final class ErrorGUICommand extends GUICommand {
     private final ErrorMessage errorMessage;
-    private final GUIManager guiManager;
 
-    public ErrorCommand(ErrorMessage errorMessage, GUIManager guiManager) {
+    public ErrorGUICommand(ErrorMessage errorMessage, GUIManager guiManager) {
+        super(guiManager);
         this.errorMessage = errorMessage;
-        this.guiManager = guiManager;
     }
     @Override
     public void execute() {

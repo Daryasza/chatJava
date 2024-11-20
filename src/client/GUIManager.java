@@ -31,36 +31,40 @@ public class GUIManager {
     private JList<String> clientList;
     private DefaultListModel<String> clientListModel;
     private JCheckBox excludeModeCheckBox;
-
     private String currentUsername;
     private Client client;
 
-
-    public GUIManager() {
+    public GUIManager() throws IOException {
         setupGUI();
-        connectToServer();
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new GUIManager());
+        try {
+            client = new Client("localhost", 9005, this, new CommandDispatcher(this));
+        } catch (IOException e) {
+            showAlertWindow("Unable to connect to server" + e.getMessage(), "Error");
+        }
     }
 
     private void setupGUI() {
+        Set<String> selectedUsers = new HashSet<>();
 
-        // Main Frame
         frame = new JFrame("BibaChat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(600, 400);
+        frame.setLayout(new BorderLayout());
 
+        //exclude checkbox
         excludeModeCheckBox = new JCheckBox("Exclude Mode");
 
-        // Client list
+        // button to clear selected users
+        JButton clearSelectionButton = new JButton("Unselect all");
+        clearSelectionButton.addActionListener(e -> {
+            clientList.clearSelection();
+            selectedUsers.clear();
+        });
+
+        // client list
         clientListModel = new DefaultListModel<>();
         clientList = new JList<>(clientListModel);
         clientList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-
-        Set<String> selectedUsers = new HashSet<>();
-
         clientList.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 selectedUsers.clear();
@@ -69,106 +73,70 @@ public class GUIManager {
             }
         });
 
+        //client pane
         JScrollPane clientScrollPane = new JScrollPane(clientList);
         clientScrollPane.setPreferredSize(new Dimension(150, 0));
-
-        // Add title to the client list
         JPanel clientPanel = new JPanel(new BorderLayout());
         JLabel clientTitle = new JLabel("Connected Users:", JLabel.CENTER);
         clientTitle.setFont(new Font("Arial", Font.BOLD, 14));
         clientPanel.add(clientTitle, BorderLayout.NORTH);
         clientPanel.add(clientScrollPane, BorderLayout.CENTER);
         clientPanel.setPreferredSize(new Dimension(150, 0));
-
-        // Add a button to clear selected users
-        JButton clearSelectionButton = new JButton("Unselect all");
-
-        clearSelectionButton.addActionListener(e -> {
-            clientList.clearSelection();
-            selectedUsers.clear();
-        });
-
         clientPanel.add(clearSelectionButton, BorderLayout.SOUTH);
 
-
+        //query banned button
         JButton queryBannedPhrasesButton = new JButton("Banned Phrases");
         queryBannedPhrasesButton.addActionListener(e -> client.queryBannedPhrases());
 
-        // Message List (JList with DefaultListModel)
+        // message box
         messageListModel = new DefaultListModel<>();
         messageList = new JList<>(messageListModel);
         messageList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane messageScrollPane = new JScrollPane(messageList);
 
-        // Input Field
+        // input field
         inputField = new JTextField();
         inputField.setToolTipText("Type your message...");
         inputField.addActionListener(e -> handleSendingMessage(selectedUsers));
 
-        // Send Button
+        // send button
         sendButton = new JButton("Send");
         sendButton.addActionListener(e -> handleSendingMessage(selectedUsers));
 
-        // Input Panel
+        // input panel
         JPanel inputPanel = new JPanel(new BorderLayout());
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
         inputPanel.add(queryBannedPhrasesButton, BorderLayout.WEST);
         inputPanel.add(excludeModeCheckBox, BorderLayout.NORTH);
 
-        // Layout
-        frame.setLayout(new BorderLayout());
+        // layout
         frame.add(messageScrollPane, BorderLayout.CENTER);
         frame.add(inputPanel, BorderLayout.SOUTH);
         frame.add(clientPanel, BorderLayout.WEST);
-
-        // Show Frame
         frame.setVisible(true);
-
-
-
-
-    }
-
-
-    protected void setTitle() {
-        frame.setTitle("BibaChat: " + getCurrentUsername());
-    }
-
-
-    private void connectToServer() {
-        try {
-            client = new Client("localhost", 9005, this);
-
-            if (client.isConnected()) {
-                CommandDispatcher dispatcher = new CommandDispatcher(this);
-                client.receiveMessages(dispatcher);
-            }
-        } catch (IOException e) {
-            showAlertWindow("Error: Unable to connect to server - " + e.getMessage(), "Error");
-        }
     }
 
     public String promptUsername() {
+        //username is null before entered
         String username = null;
+
         while (username == null || username.trim().isEmpty()) {
             username = JOptionPane.showInputDialog(frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
-            if (username == null) {
-                JOptionPane.showMessageDialog(frame, "You need a username to proceed.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
         }
-        username = username.trim();
-        setCurrentUsername(username);
-        return username;
-    }
 
+        currentUsername = username.trim();
+        return currentUsername;
+    }
     private void handleSendingMessage(Set<String> selectedUsers) {
         String message = inputField.getText();
 
-        System.out.println("Sending message: " + message);
-
         if (!message.isEmpty() && client != null && client.isConnected()) {
-            if (!selectedUsers.isEmpty()) {
+            if (selectedUsers.isEmpty()) {
+                // Broadcast to all
+                client.sendBroadcastMessage(message);
+
+            } else {
                 String userList = String.join(",", selectedUsers);
 
                 if (excludeModeCheckBox.isSelected()) {
@@ -176,41 +144,44 @@ public class GUIManager {
                     client.sendMessageWithExclusion(userList, getCurrentUsername(), message);
                 } else {
                     // Send to specific users
-                    client.sendMessageToSpecified(userList, getCurrentUsername(), message);
+                    client.sendMessageToSpecified(userList, message);
                 }
-            } else {
-                // Broadcast to all
-                client.sendBroadcastMessage(message);
             }
             inputField.setText("");
         }
     }
 
-    public void updateClientList(String[] clients) {
+    public void updateClientList(String clients) {
+        String[] clientArray = clients.split(",");
+
         SwingUtilities.invokeLater(() -> {
             clientListModel.clear();
-            for (String client : clients) {
+            for (String client : clientArray) {
                 clientListModel.addElement(client);
             }
         });
     }
 
-    public void addMessageToChat(String sender, String message) {
-        SwingUtilities.invokeLater(() -> messageListModel.addElement(sender + ": " + message));
+    public void addMessageToChat(String sender, String message, String time) {
+        SwingUtilities.invokeLater(() -> messageListModel.addElement(sender + ": " + message + "   [" + time+ "]"));
     }
 
     public void showAlertWindow(String message, String title) {
         JOptionPane.showMessageDialog(frame, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
 
+    public void setChatTitle(String username) {
+        frame.setTitle("BibaChat: " + username);
+    }
 
-    public void setCurrentUsername(String username) {
-        this.currentUsername = username;
+    public void showInstructions(String bannedPhrases) {
+        showAlertWindow("Please do not use following phrases: " + bannedPhrases + ". \n" +
+                        "To send message exclusively just select the desired user/users before sending. \n" +
+                "To skip messaging users you don’t like, just select them under Exclude Mode.",
+                "Intrstuctions");
     }
 
     public String getCurrentUsername() {
         return currentUsername;
     }
-
-
 }

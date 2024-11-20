@@ -1,21 +1,14 @@
 package client.messages;
 
 public final class UserListMessage extends Message {
-    private final String[] users;
+    private final String users;
 
-    public UserListMessage(String[] users) {
+    public UserListMessage(String users) {
         this.users = users;
     }
 
-    public String[] getUsers() {
-        return users;
-    }
-
+    @Override
     public String getContent() {
-        StringBuilder content = new StringBuilder();
-        for (String user : users) {
-            content.append(user);
-        }
-        return content.toString();
+        return users;
     }
 }

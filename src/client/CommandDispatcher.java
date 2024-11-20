@@ -11,17 +11,16 @@ public class CommandDispatcher {
     }
 
     public void dispatchCommand(Message message) {
-        Command cmd;
-
-        System.out.println(message);
+        GUICommand cmd;
 
         cmd = switch (message) {
-            case ExcludeRecipientsMessage ERMessage -> new ExcludedMessageCommand(ERMessage, guiManager);
-            case ChatMessage chatMessage -> new BroadcastMessageCommand(chatMessage, guiManager);
-            case SentToSpecificMessage SpecMessage -> new SpecificUsersMessageCommand(SpecMessage, guiManager);
-            case UserListMessage userListMessage -> new UpdateUserListCommand(userListMessage, guiManager);
-            case ErrorMessage errorMessage -> new ErrorCommand(errorMessage, guiManager);
-            case BannedPhrasesMessage bannedPhrases -> new ShowBannedPhrasesCommand(bannedPhrases, guiManager);
+            case ServerConnectedMessage scMessage -> new ServerConnectedCommand(scMessage, guiManager);
+            case ExcludeRecipientsMessage ERMessage -> new ExcludedMessageGUICommand(ERMessage, guiManager);
+            case ChatMessage chatMessage -> new BroadcastMessageGUICommand(chatMessage, guiManager);
+            case SentToSpecificMessage SpecMessage -> new SpecificUsersMessageGUICommand(SpecMessage, guiManager);
+            case UserListMessage userListMessage -> new UpdateUserListGUICommand(userListMessage, guiManager);
+            case ErrorMessage errorMessage -> new ErrorGUICommand(errorMessage, guiManager);
+            case BannedPhrasesMessage bannedPhrases -> new ShowBannedPhrasesGUICommand(bannedPhrases, guiManager);
             default -> throw new IllegalArgumentException("Unknown message type: " + message);
         };
 

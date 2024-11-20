@@ -8,22 +8,26 @@ public final class SentToSpecificMessage extends Message {
     private final String recipients;
 
     public SentToSpecificMessage(String recipients, String sender, String content) {
-        this.recipients = recipients;
         this.sender = sender;
+        this.recipients = recipients;
         this.content = content;
     }
 
     public String getSender() {
         return sender;
     }
-    public String getContent() {
-        return content;
-    }
+
     public Set<String> getRecipients() {
         if (recipients == null || recipients.isEmpty()) {
-            return Set.of(); // Return an empty set if no recipients are excluded
+            //empty set
+            return Set.of();
         }
         return Set.of(recipients.split(","));
 
+    }
+
+    @Override
+    public String getContent() {
+        return content;
     }
 }

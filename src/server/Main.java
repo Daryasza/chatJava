@@ -1,29 +1,38 @@
 package server;
 
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Main {
-
-    // use ServerSocket to listen for connections: for each client, create a new thread to manage communication
-
     public static void main(String[] args) {
+
+        // ServerSocket to listen for connections: for each client a new thread created
         try {
             Server server = new Server("src/server/server.properties");
-            ServerSocket serverSocket = new ServerSocket(server.getPort());
-            System.out.println(server.getServerName() + " started on port " + server.getPort());
-            System.out.println("Banned phrases: " + server.getBannedPhrases());
+            try(ServerSocket serverSocket = new ServerSocket(server.getPort())) {
 
+                System.out.println(server.getServerName() + " started on port " + server.getPort());
+                System.out.println("Banned Phrases: " + server.getBannedPhrases());
 
-            while (true) {
-                Socket clientSocket = serverSocket.accept();
-                new Thread(new ClientHandler(clientSocket, server)).start();
+                boolean running = true;
+
+                while (running) {
+                    try  {
+                        Socket clientSocket = serverSocket.accept();
+                        ClientHandler clientHandler = new ClientHandler(clientSocket, server);
+                        new Thread(clientHandler).start();
+                    } catch (IOException e) {
+                        System.out.println("Error when accepting client connection " + e.getMessage());
+                        running = false;
+                    }
+
+                }
             }
-
         } catch (IOException e) {
             System.err.println("Server error: " + e.getMessage());
+        } finally {
+            System.out.println("Server is shutting down");
         }
     }
 }
