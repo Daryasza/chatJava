@@ -185,7 +185,6 @@ public class Client {
         String res = "";
         try {
             res = in.readLine();
-            System.out.println(res);
         } catch (IOException e) {
             System.err.println("Error getting from server: " + e.getMessage());
         }

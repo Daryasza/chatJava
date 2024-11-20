@@ -13,7 +13,6 @@ public final class BroadcastMessageGUICommand extends GUICommand {
 
     @Override
     public void execute() {
-        System.out.println(message.getContent());
         guiManager.addMessageToChat(message.getSender(), message.getContent(), message.getTimestamp());
     }
 }

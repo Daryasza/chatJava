@@ -2,6 +2,11 @@ package server;
 
 import java.io.*;
 import java.net.Socket;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 public class ClientHandler implements Runnable {
@@ -10,6 +15,8 @@ public class ClientHandler implements Runnable {
     private String username;
     protected PrintWriter out;
     public BufferedReader in;
+
+
 
 
     public ClientHandler(Socket socket, Server server) {
@@ -51,26 +58,53 @@ public class ClientHandler implements Runnable {
                 boolean validMessage = false;
 
                 while (!validMessage) {
-                    if (message == null) {
-                        throw new IOException("Client disconnected during message validation.");
-                    }
 
-                    if (Arrays.stream(server.getBannedPhrases().split(",\\s*")).anyMatch(message::contains)) {
+                    if (Arrays.stream(server.getBannedPhrases().split(",\\s*")).anyMatch(message.toLowerCase()::contains)) {
                         serverSend("ERROR: Message contains banned phrases!");
                         message = serverGet();
-                    } else {
+                        if (message == null) {
+                            System.err.println("Client disconnected during message validation.");
+                            break;
+                        }
+                    }
+                    else if (message.toLowerCase().contains("good morning")) {
+                        DayOfWeek dayOfWeek = LocalDate.now().getDayOfWeek();
+                        LocalTime startMorning = LocalTime.of(6, 0);
+                        LocalTime endMorning = LocalTime.of(12, 0);
+                        LocalTime now = LocalTime.now();
+
+                        boolean isMorning = now.isAfter(startMorning) && now.isBefore(endMorning);
+
+                        if (dayOfWeek == DayOfWeek.MONDAY && isMorning) {
+                            serverSend("ERROR: Mornings cannot be Good before 12 PM on Mondays!");
+
+                            message = serverGet();
+                            if (message == null) {
+                                System.err.println("Client disconnected while retrying.");
+                                break;
+                            }
+                        } else {
+                            validMessage = true;
+                        }
+                    }
+                    else {
                         validMessage = true;
                     }
                 }
 
-                if (message.startsWith("SEND_TO:")) {
-                    server.sendToSpecificUsers(username, message.substring(8));
-                } else if (message.startsWith("EXCLUDE:")) {
-                    server.excludeSpecificUsers(username, message.substring(8));
-                } else if (message.equals("QUERY_BANNED")) {
-                    server.sendBannedPhrases(out);
+                if (message != null) {
+                    if (message.startsWith("SEND_TO:")) {
+                        server.sendToSpecificUsers(username, message.substring(8));
+                    } else if (message.startsWith("EXCLUDE:")) {
+                        server.excludeSpecificUsers(username, message.substring(8));
+                    } else if (message.equals("QUERY_BANNED")) {
+                        server.sendBannedPhrases(out);
+                    } else {
+                        server.broadcastMessage(username, message);
+                    }
                 } else {
-                    server.broadcastMessage(username, message);
+                    System.err.println("Client disconnected.");
+                    break;
                 }
             }
         } catch (IOException e) {
@@ -93,6 +127,7 @@ public class ClientHandler implements Runnable {
                 server.removeUser(username);
                 server.broadcastClientList();
             }
+            System.out.println("Client disconnected.");
         } catch (IOException e) {
             System.err.println("Error closing client socket: " + e.getMessage());
         }

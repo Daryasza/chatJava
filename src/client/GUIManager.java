@@ -24,10 +24,8 @@ public class GUIManager {
     private BufferedReader in;
 
     private JFrame frame;
-    private JList<String> messageList;
     private DefaultListModel<String> messageListModel;
     private JTextField inputField;
-    private JButton sendButton;
     private JList<String> clientList;
     private DefaultListModel<String> clientListModel;
     private JCheckBox excludeModeCheckBox;
@@ -69,7 +67,6 @@ public class GUIManager {
             if (!e.getValueIsAdjusting()) {
                 selectedUsers.clear();
                 selectedUsers.addAll(clientList.getSelectedValuesList());
-                System.out.println("Selected users: " + selectedUsers);
             }
         });
 
@@ -90,7 +87,7 @@ public class GUIManager {
 
         // message box
         messageListModel = new DefaultListModel<>();
-        messageList = new JList<>(messageListModel);
+        JList<String> messageList = new JList<>(messageListModel);
         messageList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane messageScrollPane = new JScrollPane(messageList);
 
@@ -100,7 +97,7 @@ public class GUIManager {
         inputField.addActionListener(e -> handleSendingMessage(selectedUsers));
 
         // send button
-        sendButton = new JButton("Send");
+        JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> handleSendingMessage(selectedUsers));
 
         // input panel
@@ -176,7 +173,7 @@ public class GUIManager {
 
     public void showInstructions(String bannedPhrases) {
         showAlertWindow("Please do not use following phrases: " + bannedPhrases + ". \n" +
-                        "To send message exclusively just select the desired user/users before sending. \n" +
+                        "Also, please, do not send \"Good Morning\" before 12PM on Mondays. \n" +
                 "To skip messaging users you don’t like, just select them under Exclude Mode.",
                 "Intrstuctions");
     }
