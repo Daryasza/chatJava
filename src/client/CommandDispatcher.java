@@ -21,7 +21,6 @@ public class CommandDispatcher {
             case UserListMessage userListMessage -> new UpdateUserListGUICommand(userListMessage, guiManager);
             case ErrorMessage errorMessage -> new ErrorGUICommand(errorMessage, guiManager);
             case BannedPhrasesMessage bannedPhrases -> new ShowBannedPhrasesGUICommand(bannedPhrases, guiManager);
-            default -> throw new IllegalArgumentException("Unknown message type: " + message);
         };
 
         cmd.execute();
