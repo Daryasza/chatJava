@@ -16,9 +16,6 @@ public class ClientHandler implements Runnable {
     protected PrintWriter out;
     public BufferedReader in;
 
-
-
-
     public ClientHandler(Socket socket, Server server) {
         this.clientSocket = socket;
         this.server = server;

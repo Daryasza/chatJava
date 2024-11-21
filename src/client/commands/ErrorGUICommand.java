@@ -3,7 +3,7 @@ package client.commands;
 import client.messages.ErrorMessage;
 import client.GUIManager;
 
-public final class ErrorGUICommand extends GUICommand {
+public class ErrorGUICommand extends GUICommand {
     private final ErrorMessage errorMessage;
 
     public ErrorGUICommand(ErrorMessage errorMessage, GUIManager guiManager) {

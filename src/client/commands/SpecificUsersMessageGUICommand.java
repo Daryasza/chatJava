@@ -2,7 +2,7 @@ package client.commands;
 import client.GUIManager;
 import client.messages.SentToSpecificMessage;
 
-public final class SpecificUsersMessageGUICommand extends GUICommand {
+public class SpecificUsersMessageGUICommand extends GUICommand {
     private final SentToSpecificMessage message;
 
     public SpecificUsersMessageGUICommand(SentToSpecificMessage message, GUIManager guiManager) {

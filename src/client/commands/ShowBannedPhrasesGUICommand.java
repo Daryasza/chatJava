@@ -3,7 +3,7 @@ package client.commands;
 import client.GUIManager;
 import client.messages.BannedPhrasesMessage;
 
-public final class ShowBannedPhrasesGUICommand extends GUICommand {
+public class ShowBannedPhrasesGUICommand extends GUICommand {
     private final BannedPhrasesMessage bannedPhrases;
 
     public ShowBannedPhrasesGUICommand(BannedPhrasesMessage bannedPhrases, GUIManager guiManager) {

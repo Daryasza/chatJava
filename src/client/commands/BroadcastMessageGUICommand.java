@@ -3,7 +3,7 @@ package client.commands;
 import client.GUIManager;
 import client.messages.ChatMessage;
 
-public final class BroadcastMessageGUICommand extends GUICommand {
+public class BroadcastMessageGUICommand extends GUICommand {
     private final ChatMessage message;
 
     public BroadcastMessageGUICommand(ChatMessage message, GUIManager guiManager) {

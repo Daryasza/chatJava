@@ -4,7 +4,7 @@ import client.GUIManager;
 import client.messages.ServerConnectedMessage;
 import server.Server;
 
-public final class ServerConnectedCommand extends GUICommand {
+public class ServerConnectedCommand extends GUICommand {
     private final ServerConnectedMessage message;
 
     public ServerConnectedCommand(ServerConnectedMessage message, GUIManager guiManager) {

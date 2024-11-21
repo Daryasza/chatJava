@@ -105,8 +105,6 @@ public class Client {
         }
     }
 
-
-
     // separate thread for receiving messages
     public void startGettingMessages(CommandDispatcher dispatcher) {
         new Thread(() -> {

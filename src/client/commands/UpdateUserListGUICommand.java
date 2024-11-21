@@ -5,7 +5,7 @@ import client.messages.UserListMessage;
 
 import javax.swing.*;
 
-public final class UpdateUserListGUICommand extends GUICommand {
+public class UpdateUserListGUICommand extends GUICommand {
     private final UserListMessage userListMessage;
 
     public UpdateUserListGUICommand(UserListMessage userListMessage, GUIManager guiManager) {

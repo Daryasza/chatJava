@@ -2,8 +2,7 @@ package client.commands;
 
 import client.GUIManager;
 
-public abstract sealed class GUICommand permits BroadcastMessageGUICommand, ErrorGUICommand, ExcludedMessageGUICommand,
-        ShowBannedPhrasesGUICommand, SpecificUsersMessageGUICommand, UpdateUserListGUICommand, ServerConnectedCommand {
+public abstract class GUICommand {
     protected final GUIManager guiManager;
 
     public GUICommand(GUIManager guiManager) {
