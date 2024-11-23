@@ -15,7 +15,7 @@ public class SpecificUsersMessageGUICommand extends GUICommand {
         String currentUsername = guiManager.getCurrentUsername();
 
         if (message.getRecipients().contains(currentUsername)) {
-            guiManager.addMessageToChat(message.getSender(), message.getContent(), message.getTimestamp());
+            guiManager.addMessageToChat(message.getSender(), message.getContent(), message.date);
         }
     }
 }

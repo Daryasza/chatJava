@@ -1,6 +1,6 @@
 package client.messages;
 
-public final class ServerConnectedMessage extends Message {
+public final class ServerConnectedMessage extends MessageBase {
     private final String username;
     private final String bannedPrases;
 
@@ -9,7 +9,6 @@ public final class ServerConnectedMessage extends Message {
         this.bannedPrases = bannedPrases;
     }
 
-    @Override
     public String getContent() {
         return bannedPrases;
     }

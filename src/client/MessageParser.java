@@ -2,56 +2,75 @@ package client;
 
 import client.messages.*;
 
+import java.util.Set;
+
 public class MessageParser {
-    public static Message parseMessage(String serverMessage) {
+    public static MessageBase parseMessage(String serverMessage) {
+        System.out.println("serverMessage= " + serverMessage);
+        //format: "MESSAGE_TYPE:content"
+        String[] messageParts = serverMessage.split(":", 2);
 
-        if (serverMessage.startsWith("CHAT:")) {
-            // Expected format: "CHAT:sender:content"
-            String[] parts = serverMessage.substring(5).split(":", 2);
-            String sender = parts[0];
-            String content = parts[1];
+        if (messageParts.length < 2) {
+            throw new IllegalArgumentException("Invalid server message: " + serverMessage);
+        }
 
-            return new ChatMessage(sender, content);
-        }
-        else if (serverMessage.startsWith("SEND_TO:")) {
-            // Format: "SEND_TO:recipients:sender:content"
-            String[] parts = serverMessage.substring(8).split(":", 3);
-            String recipients = parts[0];
-            String sender = parts[1];
-            String content = parts[2];
+        String messageType = messageParts[0];
+        String messageContent = messageParts[1];
 
-            return new SentToSpecificMessage(recipients, sender, content);
+        switch (messageType) {
+            case "BROADCAST" -> {
+                // format: "sender:content"
+                String[] parts = messageContent.split(":", 2);
+                String sender = parts[0];
+                String content = parts[1];
 
-        }
-        else if (serverMessage.startsWith("EXCLUDE:")) {
-            // Format: "EXCLUDE:excludedUsers:sender:content"
-            String[] parts = serverMessage.substring(8).split(":", 3);
-            String excludedUsers = parts[0];
-            String sender = parts[1];
-            String content = parts[2];
+                return new BroadcastMessage(sender, content);
+            }
+            case "SEND_TO" -> {
+                // format: "recipients:sender:content"
+                String[] parts = messageContent.split(":", 3);
 
-            return new ExcludeRecipientsMessage(excludedUsers, sender, content);
+                String recipients = parts[0];
+                String sender = parts[1];
+                String content = parts[2];
 
+                return new SentToSpecificMessage(recipients, sender, content);
+            }
+            case "EXCLUDE" -> {
+                // format: "excludedUsers:sender:content"
+                String[] parts = messageContent.split(":", 3);
+                String excludedUsers = parts[0];
+                String sender = parts[1];
+                String content = parts[2];
+
+                return new ExcludeRecipientsMessage(excludedUsers, sender, content);
+            }
+            case "CLIENT_LIST" -> {
+                // format: "users"
+                Set<String> clients = Set.of(messageContent.split(","));
+                return new UserListMessage(clients);
+            }
+            case "BANNED_PHRASES" -> {
+                // format: "bannedPhrases"
+                return new BannedPhrasesMessage(messageContent);
+                // format: "bannedPhrases"
+            }
+            case "ERROR" -> {
+                // format: "error"
+                return new ErrorMessage(messageContent);
+                // format: "error"
+            }
+            case "OK" -> {
+                //format: "username:bannedPhrases"
+                String[] parts = messageContent.split(":", 2);
+
+                String username = parts[0];
+                String bannedPhrases = parts[1];
+
+                return new ServerConnectedMessage(username, bannedPhrases);
+            }
         }
-        else if (serverMessage.startsWith("CLIENT_LIST:")) {
-            String clients = serverMessage.substring(12);
-            return new UserListMessage(clients);
-        }
-        else if (serverMessage.startsWith("BANNED_PHRASES:")) {
-            String bannedPhr = serverMessage.substring(15);
-            return new BannedPhrasesMessage(bannedPhr);
-        }
-        else if (serverMessage.startsWith("ERROR:")) {
-            String err = serverMessage.substring(6);
-            return new ErrorMessage(err);
-        }
-        else if (serverMessage.startsWith("OK:")) {
-            //Format: "OK:username:bannedPhrases"
-            String[] parts = serverMessage.substring(3).split(":", 2);
-            String username = parts[0];
-            String bannedPhrases = parts[1];
-            return new ServerConnectedMessage(username, bannedPhrases);
-        }
+
         throw new IllegalArgumentException("Invalid server message: " + serverMessage);
     }
 }

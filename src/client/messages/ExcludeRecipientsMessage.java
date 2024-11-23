@@ -2,7 +2,7 @@ package client.messages;
 
 import java.util.Set;
 
-public final class ExcludeRecipientsMessage extends Message {
+public final class ExcludeRecipientsMessage extends MessageBase {
     private final String excludedRecipients;
     private final String sender;
     private final String content;
@@ -17,7 +17,6 @@ public final class ExcludeRecipientsMessage extends Message {
         return sender;
     }
 
-    @Override
     public String getContent() {
         return content;
     }

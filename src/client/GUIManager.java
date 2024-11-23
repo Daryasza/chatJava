@@ -11,38 +11,38 @@ package client;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
+
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
 public class GUIManager {
-    private Socket socket;
-    private PrintWriter out;
-    private BufferedReader in;
+    protected JFrame frame;
 
-    private JFrame frame;
-    private DefaultListModel<String> messageListModel;
-    private JTextField inputField;
+    Set<String> selectedUsers;
     private JList<String> clientList;
     private DefaultListModel<String> clientListModel;
-    private JCheckBox excludeModeCheckBox;
+    private DefaultListModel<String> messageListModel;
+
+    protected JTextField inputField;
+    protected JButton sendButton;
+    protected JButton queryBannedPhrasesButton;
+    JCheckBox excludeModeCheckBox;
+
     private String currentUsername;
-    private Client client;
+
+    private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm");
+
 
     public GUIManager() throws IOException {
         setupGUI();
-        try {
-            client = new Client("localhost", 9005, this, new CommandDispatcher(this));
-        } catch (IOException e) {
-            showAlertWindow("Unable to connect to server" + e.getMessage(), "Error");
-        }
     }
 
     private void setupGUI() {
-        Set<String> selectedUsers = new HashSet<>();
+        selectedUsers = new HashSet<>();
 
         frame = new JFrame("BibaChat");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -82,8 +82,7 @@ public class GUIManager {
         clientPanel.add(clearSelectionButton, BorderLayout.SOUTH);
 
         //query banned button
-        JButton queryBannedPhrasesButton = new JButton("Banned Phrases");
-        queryBannedPhrasesButton.addActionListener(e -> client.queryBannedPhrases());
+        queryBannedPhrasesButton = new JButton("Banned Phrases");
 
         // message box
         messageListModel = new DefaultListModel<>();
@@ -94,11 +93,10 @@ public class GUIManager {
         // input field
         inputField = new JTextField();
         inputField.setToolTipText("Type your message...");
-        inputField.addActionListener(e -> handleSendingMessage(selectedUsers));
+
 
         // send button
-        JButton sendButton = new JButton("Send");
-        sendButton.addActionListener(e -> handleSendingMessage(selectedUsers));
+        sendButton = new JButton("Send");
 
         // input panel
         JPanel inputPanel = new JPanel(new BorderLayout());
@@ -114,6 +112,10 @@ public class GUIManager {
         frame.setVisible(true);
     }
 
+    public String getCurrentUsername() {
+        return currentUsername;
+    }
+
     public String promptUsername() {
         //username is null before entered
         String username = null;
@@ -125,42 +127,21 @@ public class GUIManager {
         currentUsername = username.trim();
         return currentUsername;
     }
-    private void handleSendingMessage(Set<String> selectedUsers) {
-        String message = inputField.getText();
 
-        if (!message.isEmpty() && client != null && client.isConnected()) {
-            if (selectedUsers.isEmpty()) {
-                // Broadcast to all
-                client.sendBroadcastMessage(message);
 
-            } else {
-                String userList = String.join(",", selectedUsers);
-
-                if (excludeModeCheckBox.isSelected()) {
-                    // Exclude selected users
-                    client.sendMessageWithExclusion(userList, getCurrentUsername(), message);
-                } else {
-                    // Send to specific users
-                    client.sendMessageToSpecified(userList, message);
-                }
-            }
-            inputField.setText("");
-        }
-    }
-
-    public void updateClientList(String clients) {
-        String[] clientArray = clients.split(",");
-
+    public void updateClientList(Set<String> clients) {
         SwingUtilities.invokeLater(() -> {
             clientListModel.clear();
-            for (String client : clientArray) {
+            for (String client : clients) {
                 clientListModel.addElement(client);
             }
         });
     }
 
-    public void addMessageToChat(String sender, String message, String time) {
-        SwingUtilities.invokeLater(() -> messageListModel.addElement(sender + ": " + message + "   [" + time+ "]"));
+    public void addMessageToChat(String sender, String message, Date date) {
+        String displayDate = dateFormatter.format(date);
+
+        SwingUtilities.invokeLater(() -> messageListModel.addElement(sender + ": " + message + "   [" + displayDate + "]"));
     }
 
     public void showAlertWindow(String message, String title) {
@@ -174,11 +155,12 @@ public class GUIManager {
     public void showInstructions(String bannedPhrases) {
         showAlertWindow("Please do not use following phrases: " + bannedPhrases + ". \n" +
                         "Also, please, do not send \"Good Morning\" before 12PM on Mondays. \n" +
-                "To skip messaging users you don’t like, just select them under Exclude Mode.",
+                        "To skip messaging users you don’t like, just select them under Exclude Mode.",
                 "Intrstuctions");
     }
 
-    public String getCurrentUsername() {
-        return currentUsername;
-    }
+
+
+
+
 }

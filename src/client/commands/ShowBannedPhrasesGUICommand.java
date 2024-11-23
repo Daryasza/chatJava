@@ -13,6 +13,6 @@ public class ShowBannedPhrasesGUICommand extends GUICommand {
 
     @Override
     public void execute() {
-        guiManager.showAlertWindow(bannedPhrases.getContent(), "Restricted phrases");
+        guiManager.showAlertWindow(bannedPhrases.getBannedPhrases(), "Restricted phrases");
     }
 }

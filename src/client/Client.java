@@ -1,8 +1,5 @@
 package client;
 
-// TODO
-// give instructions on how to use the messaging facility
-
 import client.messages.*;
 
 import java.io.BufferedReader;
@@ -10,133 +7,139 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Objects;
+import java.util.Optional;
 
-public class Client {
-    private Socket socket;
-    private BufferedReader in;
-    private PrintWriter out;
-    private GUIManager guiManager;
-    private CommandDispatcher cd;
-    private boolean connected;
+public final class Client {
+    private final Socket socket;
+    private final BufferedReader reader;
+    private final PrintWriter writer;
+    private final CommandExecutor commandExecutor;
+    private boolean authorized;
     boolean usernameAccepted = false;
 
     //use Socket to connect to the server
-    public Client(String host, int port, GUIManager guiManager, CommandDispatcher cd) throws IOException {
+    public Client(String host, int port, CommandExecutor commandExecutor) throws IOException {
         this.socket = new Socket(host, port);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-        this.guiManager = guiManager;
-        this.cd = cd;
+        this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.writer = new PrintWriter(socket.getOutputStream(), true);
+        this.commandExecutor = commandExecutor;
 
-        connectToServer();
     }
 
-    public void connectToServer() throws IOException {
+
+    //disconnecting
+    public void disconnectFromServer() {
         try {
-            while (!usernameAccepted) {
-                // prompt for username
-                String username = guiManager.promptUsername();
-                usernameAccepted = processUsername(username, cd);
-            }
-            startGettingMessages(cd);
-
+            sendToServer("DISCONNECT");
+            socket.close();
+            authorized = false;
         } catch (IOException e) {
-            connected = false;
-            guiManager.showAlertWindow("Failed to connect to server", "Error");
-            throw new IOException("Failed to connect.", e);
+            System.err.println("Error closing socket: " + e.getMessage());
         }
+
     }
 
-    private boolean processUsername(String username, CommandDispatcher cd) throws IOException {
-        sendToServer(username);
-
-        String response = getFromServer();
-
-        if (response == null) {
-            guiManager.showAlertWindow("Server disconnected unexpectedly", "Error");
-            return false;
-        }
-
-        Message message = MessageParser.parseMessage(response);
-        cd.dispatchCommand(message);
-
-        if (message instanceof ServerConnectedMessage) {
-            connected = true;
-            return true;
-        }
-        return false;
-    }
-
-    // send messages to the server using the main thread
-    public void sendBroadcastMessage(String message) {
-        if (connected) {
-                sendToServer(message);
-        } else {
-            System.err.println("Not connected to the server. Unable to send message.");
-        }
-    }
-
-    public void sendMessageWithExclusion(String excludedUsers, String sender, String message) {
-        if (connected) {
-            try {
-                sendToServer("EXCLUDE:" + excludedUsers + ":" + message);
-            } catch (Exception e) {
-                System.err.println("Error sending exclusion message: " + e.getMessage());
-            }
-        } else {
-            System.err.println("Not connected to the server. Unable to send message.");
-        }
-    }
-
-    public void sendMessageToSpecified(String recipients, String message) {
-        if (connected) {
-            sendToServer("SEND_TO:" + recipients + ":" + message);
-        } else {
-            System.err.println("Not connected to the server. Unable to send message.");
-        }
-    }
-
-    public void queryBannedPhrases() {
-        if (connected) {
-            sendToServer("QUERY_BANNED");
-        } else {
-            System.err.println("Not connected to the server. Unable to query banned phrases.");
-        }
-    }
-
-    // separate thread for receiving messages
-    public void startGettingMessages(CommandDispatcher dispatcher) {
+    // separate thread for reading server messages
+    void startReadingFromServer() {
+        // separate thread for receiving messages
         new Thread(() -> {
             try {
                 while (socket != null && !socket.isClosed()) {
-                    String serverMessage = getFromServer();
-                    if (serverMessage != null && !serverMessage.isEmpty()) {
-                        dispatcher.dispatchCommand(MessageParser.parseMessage(serverMessage));
+                    Optional<String> serverMessage = getFromServer();
+
+                    if (serverMessage.isPresent()) {
+                        commandExecutor.dispatchCommand(MessageParser.parseMessage(serverMessage.get()));
+                    } else {
+                        System.err.println("Server returned an empty message");
                     }
                 }
             } finally {
-                connected = false;
+                authorized = false;
             }
         }).start();
     }
 
-    protected boolean isConnected() {
-        return connected;
+    //request username approval by server
+    boolean processUsername(String username) throws IOException {
+
+        sendToServer(username);
+        Optional<String> response = getFromServer();
+
+        if (response.isPresent()) {
+
+            String content = response.get();
+            MessageBase messageBase = MessageParser.parseMessage(content);
+            commandExecutor.dispatchCommand(messageBase);
+
+            if (messageBase instanceof ServerConnectedMessage) {
+                setAuthorized(true);
+                return true;
+            }
+
+        }
+        // if messageBase instance of ErrorMessage -> handled by CommandExecutor, username not approved yet
+        return false;
     }
 
-    protected void sendToServer(String str) {
-        out.println(str);
+//     check for authorisation (username approval by server)
+    boolean isAuthorized() {
+        if (!authorized) {
+            System.err.println("Not connected to the server. Unable to send message.");
+        }
+
+        return authorized;
     }
 
-    protected String getFromServer() {
-        String res = "";
+    // sendBroadcastMessage, sendMessageToSpecified, sendMessageWithExclusion can not be sent before authorising
+    public void sendBroadcastMessage(String message) {
+        if (!isAuthorized()) {
+            return;
+        }
+        sendToServer("BROADCAST:" + message);
+    }
+
+    public void sendMessageToSpecified(String recipients, String message) {
+        if (!isAuthorized()) {
+            return;
+        }
+        sendToServer("SEND_TO:" + recipients + ":" + message);
+    }
+
+    public void sendMessageWithExclusion(String excludedUsers, String message) {
+        if (!isAuthorized()) {
+            return;
+        }
+        sendToServer("EXCLUDE:" + excludedUsers + ":" + message);
+    }
+
+    //query before authorisation
+    public void queryBannedPhrases() {
+            sendToServer("QUERY_BANNED");
+    }
+
+    //helper functions
+    private void sendToServer(String str) {
+        if (str != null && !str.isEmpty()) {
+            writer.println(str);
+        }
+    }
+
+    private Optional<String> getFromServer() {
+        String message = null;
         try {
-            res = in.readLine();
+            message = reader.readLine();
         } catch (IOException e) {
             System.err.println("Error getting from server: " + e.getMessage());
         }
-        return res;
+        return Optional.ofNullable(message);
+    }
+
+    public boolean getAuthorized() {
+        return authorized;
+    }
+
+    public void setAuthorized(boolean authorized) {
+        this.authorized = authorized;
     }
 }
 

@@ -1,18 +1,18 @@
 package client.commands;
 
 import client.GUIManager;
-import client.messages.ChatMessage;
+import client.messages.BroadcastMessage;
 
 public class BroadcastMessageGUICommand extends GUICommand {
-    private final ChatMessage message;
+    private final BroadcastMessage message;
 
-    public BroadcastMessageGUICommand(ChatMessage message, GUIManager guiManager) {
+    public BroadcastMessageGUICommand(BroadcastMessage message, GUIManager guiManager) {
         super(guiManager);
         this.message = message;
     }
 
     @Override
     public void execute() {
-        guiManager.addMessageToChat(message.getSender(), message.getContent(), message.getTimestamp());
+        guiManager.addMessageToChat(message.getSender(), message.getContent(), message.date);
     }
 }

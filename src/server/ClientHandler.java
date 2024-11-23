@@ -1,109 +1,62 @@
 package server;
 
+//TODO broadcast welcome and goodbye messages on connection/disconnection
+
+import server.messageFilters.MessageFilter;
+
 import java.io.*;
 import java.net.Socket;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Optional;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private final Server server;
+    private final ArrayList<MessageFilter> messageFilters;
     private String username;
-    protected PrintWriter out;
-    public BufferedReader in;
+    protected PrintWriter writer;
+    public BufferedReader reader;
 
-    public ClientHandler(Socket socket, Server server) {
+    public ClientHandler(Socket socket, Server server, ArrayList<MessageFilter> messageFilters) {
         this.clientSocket = socket;
         this.server = server;
+        this.messageFilters = messageFilters;
     }
 
     @Override
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            InputStreamReader inputStreamReader = new InputStreamReader(clientSocket.getInputStream());
+
+            reader = new BufferedReader(inputStreamReader);
+            writer = new PrintWriter(clientSocket.getOutputStream(), true);
+
+            ConnectedClients newClient = new ConnectedClients(clientSocket.getPort(), writer);
 
             boolean validUsername = false;
             while (!validUsername) {
                 // read username
                 username = serverGet();
-                if (username == null) {
-                    throw new IOException("Client disconnected during username validation.");
+
+                //validate according to requirements
+                Optional<String> error = UsernameValidator.getError(username, server.getBannedPhrases());
+
+                if (error.isPresent()) {
+                    // Send the validation error back to the client
+                    serverSend("ERROR: " + error.get());
+                } else {
+                    // register the client
+                    //to prevent from duplicating usernames ConcurrentHashMap.putIfAbsent() used
+                    validUsername = server.addUser(username, newClient);
                 }
-
-                String error = UsernameValidator.getError(username, server);
-                if (error == null) validUsername = true;
-                else serverSend(error);
             }
-
-            // register the client
-            ConnectedClients newClient = new ConnectedClients(clientSocket.getPort(), out);
-            server.addUser(username, newClient);
-
 
             // confirm connection
             serverSend("OK:" + username + ":" + server.getBannedPhrases());
             server.broadcastClientList();
 
-            // read and broadcast messages from this client
-            String message;
-            while ((message = in.readLine()) != null) {
-                boolean validMessage = false;
+            receiveAndSend();
 
-                while (!validMessage) {
-
-                    if (Arrays.stream(server.getBannedPhrases().split(",\\s*")).anyMatch(message.toLowerCase()::contains)) {
-                        serverSend("ERROR: Message contains banned phrases!");
-                        message = serverGet();
-                        if (message == null) {
-                            System.err.println("Client disconnected during message validation.");
-                            break;
-                        }
-                    }
-                    else if (message.toLowerCase().contains("good morning")) {
-                        DayOfWeek dayOfWeek = LocalDate.now().getDayOfWeek();
-                        LocalTime startMorning = LocalTime.of(6, 0);
-                        LocalTime endMorning = LocalTime.of(12, 0);
-                        LocalTime now = LocalTime.now();
-
-                        boolean isMorning = now.isAfter(startMorning) && now.isBefore(endMorning);
-
-                        if (dayOfWeek == DayOfWeek.MONDAY && isMorning) {
-                            serverSend("ERROR: Mornings cannot be Good before 12 PM on Mondays!");
-
-                            message = serverGet();
-                            if (message == null) {
-                                System.err.println("Client disconnected while retrying.");
-                                break;
-                            }
-                        } else {
-                            validMessage = true;
-                        }
-                    }
-                    else {
-                        validMessage = true;
-                    }
-                }
-
-                if (message != null) {
-                    if (message.startsWith("SEND_TO:")) {
-                        server.sendToSpecificUsers(username, message.substring(8));
-                    } else if (message.startsWith("EXCLUDE:")) {
-                        server.excludeSpecificUsers(username, message.substring(8));
-                    } else if (message.equals("QUERY_BANNED")) {
-                        server.sendBannedPhrases(out);
-                    } else {
-                        server.broadcastMessage(username, message);
-                    }
-                } else {
-                    System.err.println("Client disconnected.");
-                    break;
-                }
-            }
         } catch (IOException e) {
             System.err.println("Connection error with client (" + username + "): " + e.getMessage());
         } finally {
@@ -111,30 +64,85 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    // receive message from a client and distribute it to other clients
+    private void receiveAndSend() throws IOException {
+        String message = serverGet();
+        while (message != null) {
+            boolean validMessage = false;
+
+            while (!validMessage) {
+
+                for (MessageFilter filter : messageFilters) {
+                    Optional<String> errorMessage = filter.validate(message);
+
+                    if (errorMessage.isPresent()) {
+                        serverSend("ERROR: " + errorMessage.get());
+                        message = serverGet();
+                        //return if client disconnected
+                        if (message == null) {
+                            System.err.println("Client disconnected during message validation.");
+                            return;
+                        }
+                        //check again
+                        break;
+                    } else {
+                        validMessage = true;
+                    }
+                }
+            }
+
+            String[] messageParts = message.split(":", 2);
+
+            if (messageParts.length < 2) {
+                switch (message) {
+                    case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
+                    case "DISCONNECT" -> {
+                        disconnectClient();
+                        return;
+                    }
+                    default -> System.err.println("Unknown message type: " + message);
+                }
+            }
+
+            String messageType = messageParts[0];
+            String messageContent = messageParts[1];
+
+            switch (messageType) {
+                case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
+                case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
+                case "BROADCAST" -> server.broadcastMessage(username, messageContent);
+                default -> System.err.println("Unknown message type: " + messageType);
+
+            }
+            message = serverGet();
+        }
+    }
+
     private void disconnectClient() {
         try {
-            if (in != null) {
-                in.close();
+            if (clientSocket != null && !clientSocket.isClosed()) {
+                clientSocket.close();
             }
-            if (out != null) {
-                out.close();
-            }
-            clientSocket.close();
+
             if (username != null) {
                 server.removeUser(username);
                 server.broadcastClientList();
             }
+
             System.out.println("Client disconnected.");
+
         } catch (IOException e) {
             System.err.println("Error closing client socket: " + e.getMessage());
         }
     }
+
     private void serverSend(String message) {
-        out.println(message);
+        writer.println(message);
     }
     private String serverGet() throws IOException {
-        return in.readLine();
+        return reader.readLine();
     }
+
 }
 
 

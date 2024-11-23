@@ -16,7 +16,7 @@ public class ExcludedMessageGUICommand extends GUICommand {
         String currentUsername = guiManager.getCurrentUsername();
 
         if (!message.getExcludedRecipients().contains(currentUsername)) {
-            guiManager.addMessageToChat(message.getSender(), message.getContent(), message.getTimestamp());
+            guiManager.addMessageToChat(message.getSender(), message.getContent(), message.date);
         }
     }
 }

@@ -1,14 +1,15 @@
 package client.messages;
 
-public final class BannedPhrasesMessage extends Message {
+import java.util.Set;
+
+public final class BannedPhrasesMessage extends MessageBase {
     private final String bannedPhrases;
 
     public BannedPhrasesMessage(String bannedPhrases) {
         this.bannedPhrases = bannedPhrases;
     }
 
-    @Override
-    public String getContent() {
+    public String getBannedPhrases() {
         return bannedPhrases;
     }
 

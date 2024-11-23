@@ -2,7 +2,7 @@ package client.messages;
 
 import java.util.Set;
 
-public final class SentToSpecificMessage extends Message {
+public final class SentToSpecificMessage extends MessageBase {
     private final String sender;
     private final String content;
     private final String recipients;
@@ -26,7 +26,6 @@ public final class SentToSpecificMessage extends Message {
 
     }
 
-    @Override
     public String getContent() {
         return content;
     }

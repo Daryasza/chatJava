@@ -1,43 +1,76 @@
 package server;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+//TODO .properties -> .txt, Work on message types
 
 public class Server {
-    private final int port;
-    private final String serverName;
-    private final String bannedPhrases;
+    private int port;
+    private String serverName;
+    private String bannedPhrasesString;
+    private final Set<String> bannedPhrases = new HashSet<>();
 
     private static final ConcurrentHashMap<String, ConnectedClients> userMap = new ConcurrentHashMap<>();
 
     public Server(String configFilePath) {
-        Properties properties = new Properties();
 
-        try (FileInputStream fis = new FileInputStream(configFilePath)) {
-            properties.load(fis);
+        try (BufferedReader reader = new BufferedReader(new FileReader(configFilePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parts = line.split("=", 2);
+
+                String key = parts[0].trim();
+                String value = parts[1].trim();
+
+                switch (key) {
+                    case "port": {
+                        port = Integer.parseInt(value);
+                        break;
+                    }
+                    case "name": {
+                        serverName = value;
+                        break;
+                    }
+                    case "banned_phrases": {
+                        bannedPhrasesString = value;
+                        String[] phrases = value.split(",\\s*");
+                        bannedPhrases.addAll(Arrays.asList(phrases));
+                        break;
+                    }
+                    default: System.err.println("Unknown key: " + key);
+                }
+            }
+
+            // default values
+            if (port == 0) {
+                port = 8080;
+            }
+            if (serverName == null) {
+                serverName = "DefaultServer";
+            }
+
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + configFilePath);
         } catch (IOException e) {
-            throw new RuntimeException("Error reading properties file: " + e.getMessage(), e);
+            System.err.println("I/O error: " + e.getMessage());
         }
-
-        port = Integer.parseInt(properties.getProperty("port", "8080"));
-        serverName = properties.getProperty("name", "DefaultServer");
-        bannedPhrases = properties.getProperty("banned_phrases", "");
     }
 
-    protected void addUser(String username, ConnectedClients client) {
-        userMap.put(username, client);
+    protected boolean addUser(String username, ConnectedClients client) {
+        //if key already exists, putIfAbsent returns it's value, otherwise null
+         return userMap.putIfAbsent(username, client) == null;
     }
 
     protected void removeUser(String username) {
         userMap.remove(username);
-    }
-
-    protected Set<String> getConnectedUsernames() {
-        return new HashSet<>(userMap.keySet());
     }
 
     protected Map<String, ConnectedClients> getUserMap() {
@@ -52,15 +85,15 @@ public class Server {
         return serverName;
     }
 
-    protected String getBannedPhrases() {
+    protected Set<String> getBannedPhrases() {
         return bannedPhrases;
     }
 
     protected void broadcastClientList() {
-        String clientList = String.join(",", userMap.keySet());
+        String clientList = String.join(",", getUserMap().keySet());
         String message = "CLIENT_LIST:" + clientList;
 
-        for (ConnectedClients client : userMap.values()) {
+        for (ConnectedClients client : getUserMap().values()) {
             PrintWriter out = client.out();
             try{
                 out.println(message);
@@ -71,7 +104,7 @@ public class Server {
     }
 
     protected void sendBannedPhrases(PrintWriter out) {
-        String message = "BANNED_PHRASES:" + getBannedPhrases();
+        String message = "BANNED_PHRASES:" + bannedPhrasesString;
 
         try {
             //send the message to PrintWriter of every connected client
@@ -82,9 +115,10 @@ public class Server {
     }
 
     protected void broadcastMessage(String username, String message) {
-        String formattedMessage = "CHAT:" + username + ": " + message;
 
-        for (ConnectedClients client : userMap.values()) {
+        String formattedMessage = "BROADCAST:" + username + ": " + message;
+
+        for (ConnectedClients client : getUserMap().values()) {
             try {
                 //send the message to PrintWriter of every connected client
                 client.out().println(formattedMessage);
@@ -133,6 +167,8 @@ public class Server {
             }
         }
     }
+
+
 }
 
 

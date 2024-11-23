@@ -15,6 +15,6 @@ public class UpdateUserListGUICommand extends GUICommand {
 
     @Override
     public void execute() {
-        guiManager.updateClientList(userListMessage.getContent());
+        guiManager.updateClientList(userListMessage.getUserList());
     }
 }

@@ -1,24 +1,32 @@
 package server;
 
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.Set;
+
 public class UsernameValidator {
 
-    public static String getError(String username, Server server) {
+    public static Optional<String> getError(String username, Set<String> bannedPhrases) {
         // client disconnected or invalid input
         if (username == null) {
-            return "ERROR: Username is null.";
+            return Optional.of("ERROR: Username is null.");
         }
 
         username = username.trim();
 
         //empty check
         if (username.isEmpty()) {
-            return "ERROR: Username cannot be empty.";
+            return Optional.of("ERROR: Username cannot be empty.");
         }
-        //duplicates check
-        else if (server.getConnectedUsernames().contains(username)) {
-            return "ERROR: The username is already taken. Use a different name.";
+
+        if (username.contains(" ")) {
+            return Optional.of("ERROR: Username contains spaces.");
         }
-        //
-        return null;
+
+        return bannedPhrases.stream().anyMatch(username.toLowerCase()::contains)
+                ? Optional.of("ERROR: Username consists of a banned phrase!")
+                : Optional.empty();
+
+
     }
 }

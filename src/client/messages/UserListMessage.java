@@ -1,14 +1,15 @@
 package client.messages;
 
-public final class UserListMessage extends Message {
-    private final String users;
+import java.util.Set;
 
-    public UserListMessage(String users) {
+public final class UserListMessage extends MessageBase {
+    private final Set<String> users;
+
+    public UserListMessage(Set<String> users) {
         this.users = users;
     }
 
-    @Override
-    public String getContent() {
+    public Set<String> getUserList() {
         return users;
     }
 }
