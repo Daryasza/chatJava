@@ -61,7 +61,7 @@ public class GUIManager {
         buttonWrapperPanel.add(clearSelectionButton);
         buttonWrapperPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         buttonWrapperPanel.add(excludeModeCheckBox);
-        buttonWrapperPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buttonWrapperPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 15, 10));
 
 
         // client list
@@ -80,6 +80,7 @@ public class GUIManager {
         clientScrollPane.setPreferredSize(new Dimension(150, 0));
         JPanel clientPanel = new JPanel(new BorderLayout());
         JLabel clientTitle = new JLabel("Connected Users:", JLabel.CENTER);
+        clientTitle.setBorder(BorderFactory.createEmptyBorder(10, 10, 2, 10));
         clientTitle.setFont(new Font("Dialog", Font.BOLD, 14));
         clientPanel.add(clientTitle, BorderLayout.NORTH);
         clientPanel.add(clientScrollPane, BorderLayout.CENTER);
