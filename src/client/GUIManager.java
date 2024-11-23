@@ -168,17 +168,7 @@ public class GUIManager {
         return currentUsername;
     }
 
-    public String promptUsername() {
-        //username is null before entered
-        String username = null;
 
-        while (username == null || username.trim().isEmpty()) {
-            username = JOptionPane.showInputDialog(frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
-        }
-
-        currentUsername = username.trim();
-        return currentUsername;
-    }
 
 
     public void updateClientList(Set<String> clients) {

@@ -1,6 +1,6 @@
 package server;
 
-//todo when server disconnects it sends the appropriate message to client
+
 
 import server.messageFilters.BannedPhrasesMessageFilter;
 import server.messageFilters.GoodMorningMessageFilter;
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 public class Main {
     public static void main(String[] args) throws IOException {
 
-        Server server = new Server("src/server/server.txt");
+        Server server = new Server("src/config/server.txt");
         System.out.println(server.getServerName() + " started on port " + server.getPort());
         System.out.println("Banned Phrases: " + server.bannedPhrasesString);
 

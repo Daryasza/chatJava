@@ -4,6 +4,9 @@
 
 package client;
 
+import config.ConfigLoader;
+
+import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -15,6 +18,7 @@ public class Main {
         GUIManager guiManager = new GUIManager();
         Client client;
 
+
         try {
             CommandExecutor commandExecutor = new CommandExecutor(guiManager);
             client = new Client("localhost", 9005, commandExecutor);
@@ -22,9 +26,9 @@ public class Main {
             guiManager.frame.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
-                    if (client != null) {
-                        client.disconnectFromServer();
-                    }
+                if (client != null) {
+                    client.disconnectFromServer();
+                }
                 }
             });
 
@@ -36,9 +40,11 @@ public class Main {
             guiManager.queryBannedPhrasesButton.addActionListener(e -> {
                 if (client != null && client.getAuthorized()) {
                     client.queryBannedPhrases();
-                } else {
-                    guiManager.showAlertWindow("Client is not authorized or not connected to the server.", "Error");
+
+                    return;
                 }
+
+                guiManager.showAlertWindow("Client is not authorized or not connected to the server.", "Error");
             });
 
         } catch (IOException e) {
@@ -50,23 +56,33 @@ public class Main {
         try {
             while (!client.getAuthorized()) {
                 // prompt for username
-                String username = guiManager.promptUsername();
+                String username = null;
 
-                boolean success = client.processUsername(username);
-                System.out.println(success ? "Authorised" : "Unauthorised");
+                while (username == null || username.trim().isEmpty()) {
+                    username = JOptionPane.showInputDialog(guiManager.frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
+                    //if user closed the window
+                    if (username == null) {
+                        client.disconnectFromServer();
+                        System.exit(0);
+                    }
+                }
+
+                boolean success = client.processUsername(username.trim());
 
                 if (success) {
                     client.setAuthorized(true);
-                } else {
-                    guiManager.showAlertWindow("Failed to authorize username. Please try again.", "Authorization Error");
-                }
-            }
 
+                    return;
+                }
+
+                guiManager.showAlertWindow("Failed to authorize username. Please try again.", "Authorization Error");
+            }
         } catch (IOException e) {
             client.setAuthorized(false);
             guiManager.showAlertWindow("Failed to connect to server: " + e.getMessage(), "Error");
         }
     }
+
 
     private static void handleSendingMessage(Set<String> selectedUsers, GUIManager guiManager, Client client) {
         if (selectedUsers == null) {
@@ -75,18 +91,21 @@ public class Main {
 
         String message = guiManager.inputField.getText().trim();
 
-        if (!message.isEmpty() && client != null && client.getAuthorized()) {
+        if (message.isEmpty() || message.equals("Type your message here...")) {
+            return;
+        }
+
+        if (client != null && client.getAuthorized()) {
             if (selectedUsers.isEmpty()) {
                 // broadcast message
                 client.sendBroadcastMessage(message);
             } else {
-                String userList = String.join(",", selectedUsers);
                 if (guiManager.excludeModeCheckBox.isSelected()) {
                     // exclude selected users
-                    client.sendMessageWithExclusion(userList, message);
+                    client.sendMessageWithExclusion(selectedUsers, message);
                 } else {
                     // send to selected users
-                    client.sendMessageToSpecified(userList, message);
+                    client.sendMessageToSpecified(selectedUsers, message);
                 }
             }
             guiManager.inputField.setText("");
