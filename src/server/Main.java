@@ -48,7 +48,6 @@ public class Main {
 
                 } catch (IOException e) {
                     System.err.println("Error when accepting client connection: " + e.getMessage());
-                    continue;
                 }
             }
 

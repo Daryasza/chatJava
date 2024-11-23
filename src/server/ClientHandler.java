@@ -78,54 +78,56 @@ public class ClientHandler implements Runnable {
     private void receiveAndSend() throws IOException {
         try {
             String message = serverGet();
+
             while (message != null) {
-                boolean validMessage = false;
+                boolean validMessage = true;
 
-                while (!validMessage) {
+                for (MessageFilter filter : messageFilters) {
+                    Optional<String> errorMessage = filter.validate(message);
 
-                    for (MessageFilter filter : messageFilters) {
-                        Optional<String> errorMessage = filter.validate(message);
+                    if (errorMessage.isPresent()) {
+                        serverSend("ERROR: " + errorMessage.get());
+                        message = serverGet();
 
-                        if (errorMessage.isPresent()) {
-                            serverSend("ERROR: " + errorMessage.get());
-                            message = serverGet();
-                            //return if client disconnected
-                            if (message == null) {
-                                System.err.println("Client disconnected during message validation.");
-                                return;
-                            }
-                            break;
-                        } else {
-                            validMessage = true;
-                        }
-                    }
-                }
-
-                String[] messageParts = message.split(":", 2);
-
-                if (messageParts.length < 2) {
-                    switch (message) {
-                        case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
-                        case "DISCONNECT" -> {
+                        // Return if the client disconnected during validation
+                        if (message == null) {
+                            System.err.println("Client disconnected during message validation.");
                             disconnectClient();
                             return;
                         }
-                        default -> System.err.println("Unknown message type: " + message);
-                    }
-                } else {
-                    String messageType = messageParts[0];
-                    String messageContent = messageParts[1];
 
-                    switch (messageType) {
-                        case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
-                        case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
-                        case "BROADCAST" -> server.broadcastMessage(username, messageContent);
-                        default -> System.err.println("Unknown message type: " + messageType);
-
+                        validMessage = false;
+                        break;
                     }
                 }
-            }
 
+                if (validMessage) {
+                    String[] messageParts = message.split(":", 2);
+
+                    if (messageParts.length < 2) {
+                        switch (message) {
+                            case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
+                            case "DISCONNECT" -> {
+                                disconnectClient();
+                                return;
+                            }
+                            default -> System.err.println("Unknown message type: " + message);
+                        }
+                    } else {
+                        String messageType = messageParts[0];
+                        String messageContent = messageParts[1];
+
+                        switch (messageType) {
+                            case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
+                            case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
+                            case "BROADCAST" -> server.broadcastMessage(username, messageContent);
+                            default -> System.err.println("Unknown message type: " + messageType);
+                        }
+                    }
+                }
+                //read next
+                message = serverGet();
+            }
         } catch (IOException e) {
             System.err.println("Client disconnected while reading messages.");
             disconnectClient();
@@ -153,6 +155,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void serverSend(String message) {
+        System.out.println(message);
         writer.println(message);
     }
     private String serverGet() throws IOException {
