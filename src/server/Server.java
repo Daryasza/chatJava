@@ -1,12 +1,11 @@
 package server;
 
 import client.MessageTypes;
+import config.ConfigLoader;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
-//TODO .properties -> .txt, Work on message types
 
 public class Server {
     private final static String MessagePartsDelimiter = ":";
@@ -19,53 +18,13 @@ public class Server {
 
     public Server(String configFilePath) {
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(configFilePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
+        ConfigLoader configLoader = new ConfigLoader();
+        configLoader.loadConfig(configFilePath);
 
-                if (line.isEmpty() || line.startsWith("#")) {
-                    continue;
-                }
-
-                String[] parts = line.split("=", 2);
-
-                String key = parts[0].trim();
-                String value = parts[1].trim();
-
-                switch (key) {
-                    case "port": {
-                        port = Integer.parseInt(value);
-                        break;
-                    }
-                    case "name": {
-                        serverName = value;
-                        break;
-                    }
-                    case "banned_phrases": {
-                        bannedPhrasesString = value;
-                        System.out.println("bannedPhrasesString:" +bannedPhrasesString);
-                        String[] phrases = value.split(",\\s*");
-                        bannedPhrases.addAll(Arrays.asList(phrases));
-                        break;
-                    }
-                    default: System.err.println("Unknown key: " + key);
-                }
-            }
-
-            // default values
-            if (port == 0) {
-                port = 8080;
-            }
-            if (serverName == null) {
-                serverName = "DefaultServer";
-            }
-
-        } catch (FileNotFoundException e) {
-            System.err.println("File not found: " + configFilePath);
-        } catch (IOException e) {
-            System.err.println("I/O error: " + e.getMessage());
-        }
+        this.port = configLoader.getPort();
+        this.serverName = configLoader.getServerName();
+        this.bannedPhrases.addAll(configLoader.getBannedPhrases());
+        this.bannedPhrasesString = String.join(", ", this.bannedPhrases);
     }
 
     protected boolean addUser(String username, ConnectedClients client) {

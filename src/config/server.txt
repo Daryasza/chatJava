@@ -1,4 +1,4 @@
 port=9005
-IP=localhost
+host=localhost
 name=ChatServer
 banned_phrases=milk, pseudocode, i don't like coffee, marketing

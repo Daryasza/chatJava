@@ -10,7 +10,7 @@ import java.util.Set;
 public class ConfigLoader {
     private int port;
     private String serverName;
-    private String ipAddress;
+    private String host;
     private final Set<String> bannedPhrases = new HashSet<>();
     private String bannedPhrasesString;
 
@@ -38,7 +38,7 @@ public class ConfigLoader {
                         break;
                     }
                     case "ip": {
-                        ipAddress = value;
+                        host = value;
                         break;
                     }
                     case "banned_phrases": {
@@ -58,8 +58,8 @@ public class ConfigLoader {
             if (serverName == null) {
                 serverName = "DefaultServer";
             }
-            if (ipAddress == null) {
-                ipAddress = "localhost";
+            if (host == null) {
+                host = "localhost";
             }
 
         } catch (FileNotFoundException e) {
@@ -73,8 +73,8 @@ public class ConfigLoader {
         return port;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
+    public String getHost() {
+        return host;
     }
 
     public String getServerName() {

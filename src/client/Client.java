@@ -1,8 +1,7 @@
 package client;
 
-//TODO isAuthorized - review, Optional<String> getFromServer()
-
 import client.messages.*;
+import config.ConfigLoader;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,8 +21,11 @@ public final class Client {
     private boolean authorized;
 
     //use Socket to connect to the server
-    public Client(String host, int port, CommandExecutor commandExecutor) throws IOException {
-        this.socket = new Socket(host, port);
+    public Client(String pathToConfig, CommandExecutor commandExecutor) throws IOException {
+        ConfigLoader configLoader = new ConfigLoader();
+        configLoader.loadConfig(pathToConfig);
+
+        this.socket = new Socket(configLoader.getHost(), configLoader.getPort());
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.writer = new PrintWriter(socket.getOutputStream(), true);
         this.commandExecutor = commandExecutor;
@@ -39,6 +41,8 @@ public final class Client {
             System.err.println("Error closing socket: " + e.getMessage());
         }
     }
+
+
 
     // separate thread for reading server messages
     void startReadingFromServer() {

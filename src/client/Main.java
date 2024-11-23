@@ -1,10 +1,4 @@
-
-////TODO move client methods from guiManager
-
-
 package client;
-
-import config.ConfigLoader;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
@@ -21,7 +15,7 @@ public class Main {
 
         try {
             CommandExecutor commandExecutor = new CommandExecutor(guiManager);
-            client = new Client("localhost", 9005, commandExecutor);
+            client = new Client("src/config/server.txt", commandExecutor);
 
             guiManager.frame.addWindowListener(new WindowAdapter() {
                 @Override
