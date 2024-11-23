@@ -8,4 +8,5 @@ public final class MessageTypes {
     public static final String SentToSpecific = "sent-to-specific";
     public static final String ServerConnected = "server-connected";
     public static final String UserList = "user-list";
+    public static final String Sent = "sent";
 }

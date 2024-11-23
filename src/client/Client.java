@@ -163,7 +163,7 @@ public final class Client {
     private Optional<String> getFromServer() {
         try {
             String message = reader.readLine();
-            System.out.println("Raw Message: " + message);
+
             if (message == null) {
                 return Optional.empty();
             }

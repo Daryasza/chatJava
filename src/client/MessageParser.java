@@ -18,30 +18,11 @@ public class MessageParser {
         String messageContent = messageParts[1];
 
         switch (messageType) {
-            case MessageTypes.Broadcast -> {
+            case MessageTypes.Sent -> {
                 // format: "sender:content"
                 String[] parts = messageContent.split(":", 2);
                 String sender = parts[0];
                 String content = parts[1];
-
-                return new ChatMessage(sender, content);
-            }
-            case MessageTypes.SentToSpecific -> {
-                // format: "recipients:sender:content"
-                String[] parts = messageContent.split(":", 3);
-
-                String recipients = parts[0];
-                String sender = parts[1];
-                String content = parts[2];
-
-                return new ChatMessage(sender, content);
-            }
-            case MessageTypes.ExcludeRecipients -> {
-                // format: "excludedUsers:sender:content"
-                String[] parts = messageContent.split(":", 3);
-                String excludedUsers = parts[0];
-                String sender = parts[1];
-                String content = parts[2];
 
                 return new ChatMessage(sender, content);
             }

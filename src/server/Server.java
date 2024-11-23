@@ -79,11 +79,11 @@ public class Server {
 
     protected void broadcastMessage(String username, String message) {
 
-        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Broadcast, username, message);
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Sent, username, message);
 
         for (ConnectedClients client : getUserMap().values()) {
             try {
-                //send the message to PrintWriter of every connected client
+                //send the message to every connected client
                 client.out().println(formattedMessage);
             } catch (Exception e) {
                 System.err.println("Failed to send message to " + client.port() + ": " + e.getMessage());
@@ -95,9 +95,8 @@ public class Server {
         String[] parts = message.split(":", 2);
         Set<String> targetUsers = Set.of(parts[0].split(","));
         String content = parts[1];
-        var targetUsersString = String.join(",", targetUsers);
 
-        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.SentToSpecific, targetUsersString, username, content);
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Sent, username, content);
 
         for (String recipient : targetUsers) {
             ConnectedClients client = getUserMap().get(recipient.trim());
@@ -114,10 +113,9 @@ public class Server {
     void excludeSpecificUsers(String username, String message) {
         String[] parts = message.split(":", 2);
         Set<String> excludedUsersSet = Set.of(parts[0].split(","));
-        String exludedUsersString = String.join(",", excludedUsersSet);
 
         String content = parts[1];
-        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.ExcludeRecipients, exludedUsersString, username, content);
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Sent, username, content);
 
         for (Map.Entry<String, ConnectedClients> entry : getUserMap().entrySet()) {
             username = entry.getKey();
