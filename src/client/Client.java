@@ -10,12 +10,15 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Optional;
+import java.util.Set;
 
 public final class Client {
+    private final static String MessagePartsDelimiter = ":";
     private final Socket socket;
     private final BufferedReader reader;
     private final PrintWriter writer;
     private final CommandExecutor commandExecutor;
+    private Optional<String> currentUsername = Optional.empty();
     private boolean authorized;
 
     //use Socket to connect to the server
@@ -25,7 +28,6 @@ public final class Client {
         this.writer = new PrintWriter(socket.getOutputStream(), true);
         this.commandExecutor = commandExecutor;
     }
-
 
     //disconnecting
     public void disconnectFromServer() {
@@ -48,13 +50,13 @@ public final class Client {
 
                     serverMessage.ifPresentOrElse(
                             message -> {
-                                try {
-                                    commandExecutor.dispatchCommand(MessageParser.parseMessage(message));
-                                } catch (IllegalArgumentException e) {
-                                    System.err.println("Error processing server message: " + e.getMessage());
-                                }
-                            },
-                            () -> System.err.println("Server returned an empty message")
+                            try {
+                                commandExecutor.dispatchCommand(MessageParser.parseMessage(message));
+                            } catch (IllegalArgumentException e) {
+                                System.err.println("Error processing server message: " + e.getMessage());
+                            }
+                        },
+                        () -> System.err.println("Server returned an empty message")
                     );
                 }
             } finally {
@@ -81,8 +83,10 @@ public final class Client {
             MessageBase messageBase = MessageParser.parseMessage(content);
             commandExecutor.dispatchCommand(messageBase);
 
-            if (messageBase instanceof ServerConnectedMessage) {
+            if (messageBase instanceof ServerConnectedMessage serverConnectedMessage) {
                 setAuthorized(true);
+                currentUsername = Optional.of(serverConnectedMessage.getUsername());
+
                 return true;
             }
         } catch (IllegalArgumentException e) {
@@ -112,26 +116,37 @@ public final class Client {
         if (!isAuthorized()) {
             return;
         }
-        sendToServer("BROADCAST:" + message);
+
+        var messageString = String.join(MessagePartsDelimiter, MessageTypes.Broadcast, message);
+        sendToServer(messageString);
     }
 
-    public void sendMessageToSpecified(String recipients, String message) {
+    public void sendMessageToSpecified(Set<String> recipients, String message) {
         if (!isAuthorized()) {
             return;
         }
-        sendToServer("SEND_TO:" + recipients + ":" + message);
+
+        recipients.add(currentUsername.get());
+        var recipientsString = String.join(",", recipients);
+        var messageString = String.join(MessagePartsDelimiter, MessageTypes.SentToSpecific, recipientsString, message);
+
+        sendToServer(messageString);
     }
 
-    public void sendMessageWithExclusion(String excludedUsers, String message) {
+    public void sendMessageWithExclusion(Set<String> excludedUsers, String message) {
         if (!isAuthorized()) {
             return;
         }
-        sendToServer("EXCLUDE:" + excludedUsers + ":" + message);
+
+        var exludedUsersString = String.join(",", excludedUsers);
+        var messageString = String.join(MessagePartsDelimiter, MessageTypes.ExcludeRecipients, exludedUsersString, message);
+
+        sendToServer(messageString);
     }
 
     //query before authorisation
     public void queryBannedPhrases() {
-            sendToServer("QUERY_BANNED");
+        sendToServer("QUERY_BANNED");
     }
 
     //helper functions
@@ -144,7 +159,7 @@ public final class Client {
     private Optional<String> getFromServer() {
         try {
             String message = reader.readLine();
-            System.out.println("Raw Message" + message);
+            System.out.println("Raw Message: " + message);
             if (message == null) {
                 return Optional.empty();
             }

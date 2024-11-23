@@ -1,5 +1,7 @@
 package server;
 
+import client.MessageTypes;
+
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 //TODO .properties -> .txt, Work on message types
 
 public class Server {
+    private final static String MessagePartsDelimiter = ":";
     private int port;
     private String serverName;
     private final Set<String> bannedPhrases = new HashSet<>();
@@ -92,7 +95,7 @@ public class Server {
 
     protected void broadcastClientList() {
         String clientList = String.join(",", getUserMap().keySet());
-        String message = "CLIENT_LIST:" + clientList;
+        String message = String.join(MessagePartsDelimiter, MessageTypes.UserList, clientList);
 
         for (ConnectedClients client : getUserMap().values()) {
             PrintWriter out = client.out();
@@ -105,7 +108,7 @@ public class Server {
     }
 
     protected void sendBannedPhrases(PrintWriter out) {
-        String message = "BANNED_PHRASES:" + bannedPhrasesString;;
+        String message = String.join(MessagePartsDelimiter, MessageTypes.BannedPhrases, bannedPhrasesString);
 
         try {
             //send the message to PrintWriter of every connected client
@@ -117,7 +120,7 @@ public class Server {
 
     protected void broadcastMessage(String username, String message) {
 
-        String formattedMessage = "BROADCAST:" + username + ": " + message;
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Broadcast, username, message);
 
         for (ConnectedClients client : getUserMap().values()) {
             try {
@@ -133,8 +136,9 @@ public class Server {
         String[] parts = message.split(":", 2);
         Set<String> targetUsers = Set.of(parts[0].split(","));
         String content = parts[1];
+        var targetUsersString = String.join(",", targetUsers);
 
-        String formattedMessage = "SEND_TO:" + String.join(",", targetUsers) + ":" + username + ":" + content;
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.SentToSpecific, targetUsersString, username, content);
 
         for (String recipient : targetUsers) {
             ConnectedClients client = getUserMap().get(recipient.trim());
@@ -151,9 +155,10 @@ public class Server {
     void excludeSpecificUsers(String username, String message) {
         String[] parts = message.split(":", 2);
         Set<String> excludedUsersSet = Set.of(parts[0].split(","));
+        String exludedUsersString = String.join(",", excludedUsersSet);
 
         String content = parts[1];
-        String formattedMessage = "EXCLUDE:"  + String.join(",", excludedUsersSet) + ":" + username + ":" + content;
+        String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.ExcludeRecipients, exludedUsersString, username, content);
 
         for (Map.Entry<String, ConnectedClients> entry : getUserMap().entrySet()) {
             username = entry.getKey();
@@ -168,8 +173,6 @@ public class Server {
             }
         }
     }
-
-
 }
 
 

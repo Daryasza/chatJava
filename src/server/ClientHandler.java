@@ -2,6 +2,7 @@ package server;
 
 //TODO broadcast welcome and goodbye messages on connection/disconnection
 
+import client.MessageTypes;
 import server.messageFilters.MessageFilter;
 
 import java.io.*;
@@ -45,23 +46,25 @@ public class ClientHandler implements Runnable {
 
                 if (error.isPresent()) {
                     // Send the validation error back to the client
-                    serverSend("ERROR: " + error.get());
-                } else {
+                    serverSend(MessageTypes.Error + error.get());
+
+                    continue;
+                }
+
                     // register the client
                     //to prevent from duplicating usernames ConcurrentHashMap.putIfAbsent() used
-                    validUsername = server.addUser(username, newClient);
-                    System.out.println("Client " + username + " added");
-                    System.out.println(validUsername);
+                validUsername = server.addUser(username, newClient);
+                System.out.println("Client " + username + " added");
+                System.out.println(validUsername);
 
-                    if (!validUsername) {
-                        // If the username already exists, inform the client
-                        serverSend("ERROR: Username already taken. Please try a different username.");
-                    } else {
-                        // confirm connection
-                        serverSend("OK:" + username + ":" + server.bannedPhrasesString);
-                        System.out.println("Client " + username + " connection conirmed");
-                        server.broadcastClientList();
-                    }
+                if (!validUsername) {
+                    // If the username already exists, inform the client
+                    serverSend("ERROR: Username already taken. Please try a different username.");
+                } else {
+                    // confirm connection
+                    serverSend("OK:" + username + ":" + server.bannedPhrasesString);
+                    System.out.println("Client " + username + " connection confirmed");
+                    server.broadcastClientList();
                 }
             }
 
@@ -86,7 +89,7 @@ public class ClientHandler implements Runnable {
                     Optional<String> errorMessage = filter.validate(message);
 
                     if (errorMessage.isPresent()) {
-                        serverSend("ERROR: " + errorMessage.get());
+                        serverSend(MessageTypes.Error + ":" + errorMessage.get());
                         message = serverGet();
 
                         // Return if the client disconnected during validation
@@ -118,9 +121,9 @@ public class ClientHandler implements Runnable {
                         String messageContent = messageParts[1];
 
                         switch (messageType) {
-                            case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
-                            case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
-                            case "BROADCAST" -> server.broadcastMessage(username, messageContent);
+                            case MessageTypes.SentToSpecific -> server.sendToSpecificUsers(username, messageContent);
+                            case MessageTypes.ExcludeRecipients -> server.excludeSpecificUsers(username, messageContent);
+                            case MessageTypes.Broadcast -> server.broadcastMessage(username, messageContent);
                             default -> System.err.println("Unknown message type: " + messageType);
                         }
                     }
@@ -132,8 +135,6 @@ public class ClientHandler implements Runnable {
             System.err.println("Client disconnected while reading messages.");
             disconnectClient();
         }
-
-
     }
 
     private void disconnectClient() {
@@ -158,10 +159,10 @@ public class ClientHandler implements Runnable {
         System.out.println(message);
         writer.println(message);
     }
+
     private String serverGet() throws IOException {
         return reader.readLine();
     }
-
 }
 
 

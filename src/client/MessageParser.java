@@ -18,7 +18,7 @@ public class MessageParser {
         String messageContent = messageParts[1];
 
         switch (messageType) {
-            case "BROADCAST" -> {
+            case MessageTypes.Broadcast -> {
                 // format: "sender:content"
                 String[] parts = messageContent.split(":", 2);
                 String sender = parts[0];
@@ -26,7 +26,7 @@ public class MessageParser {
 
                 return new BroadcastMessage(sender, content);
             }
-            case "SEND_TO" -> {
+            case MessageTypes.SentToSpecific -> {
                 // format: "recipients:sender:content"
                 String[] parts = messageContent.split(":", 3);
 
@@ -36,7 +36,7 @@ public class MessageParser {
 
                 return new SentToSpecificMessage(recipients, sender, content);
             }
-            case "EXCLUDE" -> {
+            case MessageTypes.ExcludeRecipients -> {
                 // format: "excludedUsers:sender:content"
                 String[] parts = messageContent.split(":", 3);
                 String excludedUsers = parts[0];
@@ -45,17 +45,17 @@ public class MessageParser {
 
                 return new ExcludeRecipientsMessage(excludedUsers, sender, content);
             }
-            case "CLIENT_LIST" -> {
+            case MessageTypes.UserList -> {
                 // format: "users"
                 Set<String> clients = Set.of(messageContent.split(","));
                 return new UserListMessage(clients);
             }
-            case "BANNED_PHRASES" -> {
+            case MessageTypes.BannedPhrases -> {
                 // format: "bannedPhrases"
                 return new BannedPhrasesMessage(messageContent);
                 // format: "bannedPhrases"
             }
-            case "ERROR" -> {
+            case MessageTypes.Error -> {
                 // format: "error"
                 return new ErrorMessage(messageContent);
                 // format: "error"
