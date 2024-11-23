@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Server {
     private int port;
     private String serverName;
-    private String bannedPhrasesString;
     private final Set<String> bannedPhrases = new HashSet<>();
+    protected String bannedPhrasesString;
 
     private static final ConcurrentHashMap<String, ConnectedClients> userMap = new ConcurrentHashMap<>();
 
@@ -41,6 +41,7 @@ public class Server {
                     }
                     case "banned_phrases": {
                         bannedPhrasesString = value;
+                        System.out.println("bannedPhrasesString:" +bannedPhrasesString);
                         String[] phrases = value.split(",\\s*");
                         bannedPhrases.addAll(Arrays.asList(phrases));
                         break;
@@ -104,7 +105,7 @@ public class Server {
     }
 
     protected void sendBannedPhrases(PrintWriter out) {
-        String message = "BANNED_PHRASES:" + bannedPhrasesString;
+        String message = "BANNED_PHRASES:" + bannedPhrasesString;;
 
         try {
             //send the message to PrintWriter of every connected client

@@ -52,7 +52,7 @@ public class ClientHandler implements Runnable {
             }
 
             // confirm connection
-            serverSend("OK:" + username + ":" + server.getBannedPhrases());
+            serverSend("OK:" + username + ":" + server.bannedPhrasesString);
             server.broadcastClientList();
 
             receiveAndSend();

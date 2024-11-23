@@ -1,5 +1,7 @@
 package client;
 
+//TODO isAuthorized - review, Optional<String> getFromServer()
+
 import client.messages.*;
 
 import java.io.BufferedReader;
@@ -15,7 +17,6 @@ public final class Client {
     private final PrintWriter writer;
     private final CommandExecutor commandExecutor;
     private boolean authorized;
-    boolean usernameAccepted = false;
 
     //use Socket to connect to the server
     public Client(String host, int port, CommandExecutor commandExecutor) throws IOException {
@@ -23,7 +24,6 @@ public final class Client {
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.writer = new PrintWriter(socket.getOutputStream(), true);
         this.commandExecutor = commandExecutor;
-
     }
 
 
@@ -36,7 +36,6 @@ public final class Client {
         } catch (IOException e) {
             System.err.println("Error closing socket: " + e.getMessage());
         }
-
     }
 
     // separate thread for reading server messages
@@ -61,7 +60,6 @@ public final class Client {
 
     //request username approval by server
     boolean processUsername(String username) throws IOException {
-
         sendToServer(username);
         Optional<String> response = getFromServer();
 
@@ -81,7 +79,7 @@ public final class Client {
         return false;
     }
 
-//     check for authorisation (username approval by server)
+    //check for authorisation (username approval by server)
     boolean isAuthorized() {
         if (!authorized) {
             System.err.println("Not connected to the server. Unable to send message.");

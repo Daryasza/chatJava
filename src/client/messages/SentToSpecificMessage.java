@@ -22,8 +22,8 @@ public final class SentToSpecificMessage extends MessageBase {
             //empty set
             return Set.of();
         }
-        return Set.of(recipients.split(","));
 
+        return Set.of(recipients.split(","));
     }
 
     public String getContent() {

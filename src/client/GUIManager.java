@@ -11,6 +11,8 @@ package client;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.io.IOException;
 
 
@@ -22,18 +24,17 @@ import java.util.Set;
 public class GUIManager {
     protected JFrame frame;
 
-    Set<String> selectedUsers;
     private JList<String> clientList;
     private DefaultListModel<String> clientListModel;
     private DefaultListModel<String> messageListModel;
 
+    protected Set<String> selectedUsers;
     protected JTextField inputField;
     protected JButton sendButton;
     protected JButton queryBannedPhrasesButton;
-    JCheckBox excludeModeCheckBox;
+    protected JCheckBox excludeModeCheckBox;
 
     private String currentUsername;
-
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm");
 
 
@@ -54,10 +55,18 @@ public class GUIManager {
 
         // button to clear selected users
         JButton clearSelectionButton = new JButton("Unselect all");
+        FontMetrics fontMetrics = clearSelectionButton.getFontMetrics(clearSelectionButton.getFont());
+        int textWidth = fontMetrics.stringWidth(clearSelectionButton.getText());
+        System.out.println(textWidth);
+        clearSelectionButton.setPreferredSize(new Dimension(textWidth + (35), clearSelectionButton.getPreferredSize().height));
+        System.out.println(clearSelectionButton.getPreferredSize());
         clearSelectionButton.addActionListener(e -> {
             clientList.clearSelection();
             selectedUsers.clear();
         });
+
+        JPanel buttonWrapperPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        buttonWrapperPanel.add(clearSelectionButton);
 
         // client list
         clientListModel = new DefaultListModel<>();
@@ -75,11 +84,11 @@ public class GUIManager {
         clientScrollPane.setPreferredSize(new Dimension(150, 0));
         JPanel clientPanel = new JPanel(new BorderLayout());
         JLabel clientTitle = new JLabel("Connected Users:", JLabel.CENTER);
-        clientTitle.setFont(new Font("Arial", Font.BOLD, 14));
+        clientTitle.setFont(new Font("Comics Sans", Font.BOLD, 14));
         clientPanel.add(clientTitle, BorderLayout.NORTH);
         clientPanel.add(clientScrollPane, BorderLayout.CENTER);
         clientPanel.setPreferredSize(new Dimension(150, 0));
-        clientPanel.add(clearSelectionButton, BorderLayout.SOUTH);
+        clientPanel.add(buttonWrapperPanel, BorderLayout.SOUTH);
 
         //query banned button
         queryBannedPhrasesButton = new JButton("Banned Phrases");
@@ -92,8 +101,25 @@ public class GUIManager {
 
         // input field
         inputField = new JTextField();
-        inputField.setToolTipText("Type your message...");
+        inputField.setText("Type your message here...");
+        inputField.setForeground(Color.LIGHT_GRAY);
+        inputField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (inputField.getText().equals("Type your message here...")) {
+                    inputField.setText("");
+                    inputField.setForeground(Color.DARK_GRAY);
+                }
+            }
 
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (inputField.getText().isEmpty()) {
+                    inputField.setText("Type your message here...");
+                    inputField.setForeground(Color.LIGHT_GRAY);
+                }
+            }
+        });
 
         // send button
         sendButton = new JButton("Send");
@@ -145,7 +171,7 @@ public class GUIManager {
     }
 
     public void showAlertWindow(String message, String title) {
-        JOptionPane.showMessageDialog(frame, message, title, JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(frame, message, title, JOptionPane.PLAIN_MESSAGE);
     }
 
     public void setChatTitle(String username) {
@@ -153,10 +179,16 @@ public class GUIManager {
     }
 
     public void showInstructions(String bannedPhrases) {
-        showAlertWindow("Please do not use following phrases: " + bannedPhrases + ". \n" +
-                        "Also, please, do not send \"Good Morning\" before 12PM on Mondays. \n" +
-                        "To skip messaging users you don’t like, just select them under Exclude Mode.",
-                "Intrstuctions");
+        String message = "<html><body style='font-family:Arial; font-size:10px; color:#2b2a2a;'>"
+                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 20px;'>Hello there! Nice to see you. </div>"
+                + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>To keep everyone's spirits up, please follow the rules: </div>"
+                + "<div style='text-align: left; margin-bottom: 5px;'> 1. Do not use the following phrases: " + bannedPhrases + "</div>"
+                + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'> 2. On Mondays, hold off on greeting with 'good morning' before noon.</div>"
+                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 10px;'>To skip messaging users you don’t like, just select them under &quot;Exclude Mod&quot;e.</div>"
+                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 20px;'> Enjoy chatting! </div>"
+                + "</body></html>";
+
+        showAlertWindow(message, "How to Use the Chat");
     }
 
 

@@ -1,5 +1,7 @@
 package server;
 
+//todo when server disconnects it sends the appropriate message to client
+
 import server.messageFilters.BannedPhrasesMessageFilter;
 import server.messageFilters.GoodMorningMessageFilter;
 import server.messageFilters.MessageFilter;
@@ -8,14 +10,13 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws IOException {
 
         Server server = new Server("src/server/server.txt");
         System.out.println(server.getServerName() + " started on port " + server.getPort());
-        System.out.println("Banned Phrases: " + server.getBannedPhrases());
+        System.out.println("Banned Phrases: " + server.bannedPhrasesString);
 
         // try with resources - automatically calls serverSocket.close() when the try block exits (serverSocket implements AutoCloseable)
         try (ServerSocket serverSocket = new ServerSocket(server.getPort())) {
