@@ -13,9 +13,11 @@ import java.util.Set;
 
 public final class Client {
     private final static String MessagePartsDelimiter = ":";
-    private final Socket socket;
-    private final BufferedReader reader;
-    private final PrintWriter writer;
+    private final String host;
+    private final int port;
+    private Socket socket;
+    private BufferedReader reader;
+    private PrintWriter writer;
     private final CommandExecutor commandExecutor;
     private Optional<String> currentUsername = Optional.empty();
     private boolean authorized;
@@ -24,11 +26,16 @@ public final class Client {
     public Client(String pathToConfig, CommandExecutor commandExecutor) throws IOException {
         ConfigLoader configLoader = new ConfigLoader();
         configLoader.loadConfig(pathToConfig);
+        this.host = configLoader.getHost();
+        this.port = configLoader.getPort();
+        this.commandExecutor = commandExecutor;
+        connectToServer();
+    }
 
-        this.socket = new Socket(configLoader.getHost(), configLoader.getPort());
+    private void connectToServer() throws IOException {
+        this.socket = new Socket(host, port);
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.writer = new PrintWriter(socket.getOutputStream(), true);
-        this.commandExecutor = commandExecutor;
     }
 
     //disconnecting
@@ -36,31 +43,46 @@ public final class Client {
         try {
             sendToServer("DISCONNECT");
             socket.close();
-            authorized = false;
+            setAuthorized(false);
         } catch (IOException e) {
             System.err.println("Error closing socket: " + e.getMessage());
         }
     }
 
+    private void reconnect() {
+        System.err.println("Connection lost. Attempting to reconnect...");
+        while (true) {
+            try {
+                Thread.sleep(1000);
+                connectToServer();
+                System.out.println("Reconnected to the server.");
+                break;
+            } catch (IOException | InterruptedException e) {
+                System.err.println("Reconnection failed: " + e.getMessage());
+            }
+        }
+    }
 
 
     // separate thread for reading server messages
     void startReadingFromServer() {
-        // separate thread for receiving messages
         new Thread(() -> {
             try {
-                while (isSocketValid()) {
+                while (true) {
+                    if (!isSocketValid()) {
+                        reconnect();
+                    }
                     Optional<String> serverMessage = getFromServer();
 
                     serverMessage.ifPresentOrElse(
                             message -> {
-                            try {
-                                commandExecutor.dispatchCommand(MessageParser.parseMessage(message));
-                            } catch (IllegalArgumentException e) {
-                                System.err.println("Error processing server message: " + e.getMessage());
-                            }
-                        },
-                        () -> System.err.println("Server returned an empty message")
+                                try {
+                                    commandExecutor.dispatchCommand(MessageParser.parseMessage(message));
+                                } catch (IllegalArgumentException e) {
+                                    System.err.println("Error processing server message: " + e.getMessage());
+                                }
+                            },
+                            () -> System.err.println("Server returned an empty message")
                     );
                 }
             } finally {
@@ -72,9 +94,7 @@ public final class Client {
     //request username approval by server
     boolean processUsername(String username) throws IOException {
         sendToServer(username);
-        System.out.println("Username: " + username);
         Optional<String> response = getFromServer();
-        System.out.println("Response: " + response);
 
         if (response.isEmpty()) {
             System.err.println("No response from server while processing username.");
@@ -122,6 +142,7 @@ public final class Client {
         }
 
         var messageString = String.join(MessagePartsDelimiter, MessageTypes.Broadcast, message);
+
         sendToServer(messageString);
     }
 

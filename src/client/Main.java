@@ -90,6 +90,7 @@ public class Main {
         }
 
         if (client != null && client.getAuthorized()) {
+            System.out.println(message + "1");
             if (selectedUsers.isEmpty()) {
                 // broadcast message
                 client.sendBroadcastMessage(message);

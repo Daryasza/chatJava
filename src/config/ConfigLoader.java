@@ -12,7 +12,6 @@ public class ConfigLoader {
     private String serverName;
     private String host;
     private final Set<String> bannedPhrases = new HashSet<>();
-    private String bannedPhrasesString;
 
     public void loadConfig(String configFilePath) {
         try (BufferedReader reader = new BufferedReader(new FileReader(configFilePath))) {
@@ -42,8 +41,7 @@ public class ConfigLoader {
                         break;
                     }
                     case "banned_phrases": {
-                        bannedPhrasesString = value;
-                        System.out.println("bannedPhrasesString: " + bannedPhrasesString);
+                        System.out.println("bannedPhrasesString: " + value);
                         String[] phrases = value.split(",\\s*");
                         bannedPhrases.addAll(Set.of(phrases));
                         break;

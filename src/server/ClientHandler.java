@@ -92,7 +92,7 @@ public class ClientHandler implements Runnable {
                         serverSend(MessageTypes.Error + ":" + errorMessage.get());
                         message = serverGet();
 
-                        // Return if the client disconnected during validation
+                        // return if the client disconnected during validation
                         if (message == null) {
                             System.err.println("Client disconnected during message validation.");
                             disconnectClient();

@@ -179,6 +179,7 @@ public class GUIManager {
 
     public void showAlertWindow(String message, String title) {
         JOptionPane.showMessageDialog(frame, message, title,  JOptionPane.PLAIN_MESSAGE);
+        inputField.requestFocus();
     }
 
     public void setChatTitle(String username) {
