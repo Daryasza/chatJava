@@ -43,17 +43,22 @@ public final class Client {
         // separate thread for receiving messages
         new Thread(() -> {
             try {
-                while (socket != null && !socket.isClosed()) {
+                while (isSocketValid()) {
                     Optional<String> serverMessage = getFromServer();
 
-                    if (serverMessage.isPresent()) {
-                        commandExecutor.dispatchCommand(MessageParser.parseMessage(serverMessage.get()));
-                    } else {
-                        System.err.println("Server returned an empty message");
-                    }
+                    serverMessage.ifPresentOrElse(
+                            message -> {
+                                try {
+                                    commandExecutor.dispatchCommand(MessageParser.parseMessage(message));
+                                } catch (IllegalArgumentException e) {
+                                    System.err.println("Error processing server message: " + e.getMessage());
+                                }
+                            },
+                            () -> System.err.println("Server returned an empty message")
+                    );
                 }
             } finally {
-                authorized = false;
+                disconnectFromServer();
             }
         }).start();
     }
@@ -61,11 +66,18 @@ public final class Client {
     //request username approval by server
     boolean processUsername(String username) throws IOException {
         sendToServer(username);
+        System.out.println("Username: " + username);
         Optional<String> response = getFromServer();
+        System.out.println("Response: " + response);
 
-        if (response.isPresent()) {
+        if (response.isEmpty()) {
+            System.err.println("No response from server while processing username.");
+            return false;
+        }
 
-            String content = response.get();
+        String content = response.get();
+        System.out.println(content);
+        try {
             MessageBase messageBase = MessageParser.parseMessage(content);
             commandExecutor.dispatchCommand(messageBase);
 
@@ -73,8 +85,11 @@ public final class Client {
                 setAuthorized(true);
                 return true;
             }
-
+        } catch (IllegalArgumentException e) {
+            // Handle unexpected message content or parsing issues
+            System.err.println("Error parsing server message: " + e.getMessage());
         }
+
         // if messageBase instance of ErrorMessage -> handled by CommandExecutor, username not approved yet
         return false;
     }
@@ -86,6 +101,10 @@ public final class Client {
         }
 
         return authorized;
+    }
+
+    private boolean isSocketValid() {
+        return socket != null && !socket.isClosed();
     }
 
     // sendBroadcastMessage, sendMessageToSpecified, sendMessageWithExclusion can not be sent before authorising
@@ -123,13 +142,17 @@ public final class Client {
     }
 
     private Optional<String> getFromServer() {
-        String message = null;
         try {
-            message = reader.readLine();
+            String message = reader.readLine();
+            System.out.println("Raw Message" + message);
+            if (message == null) {
+                return Optional.empty();
+            }
+            return Optional.of(message);
         } catch (IOException e) {
             System.err.println("Error getting from server: " + e.getMessage());
         }
-        return Optional.ofNullable(message);
+        return Optional.empty();
     }
 
     public boolean getAuthorized() {

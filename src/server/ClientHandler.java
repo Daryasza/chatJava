@@ -38,6 +38,8 @@ public class ClientHandler implements Runnable {
                 // read username
                 username = serverGet();
 
+                System.out.println("Client " + username + " connected");
+
                 //validate according to requirements
                 Optional<String> error = UsernameValidator.getError(username, server.getBannedPhrases());
 
@@ -48,12 +50,20 @@ public class ClientHandler implements Runnable {
                     // register the client
                     //to prevent from duplicating usernames ConcurrentHashMap.putIfAbsent() used
                     validUsername = server.addUser(username, newClient);
+                    System.out.println("Client " + username + " added");
+                    System.out.println(validUsername);
+
+                    if (!validUsername) {
+                        // If the username already exists, inform the client
+                        serverSend("ERROR: Username already taken. Please try a different username.");
+                    } else {
+                        // confirm connection
+                        serverSend("OK:" + username + ":" + server.bannedPhrasesString);
+                        System.out.println("Client " + username + " connection conirmed");
+                        server.broadcastClientList();
+                    }
                 }
             }
-
-            // confirm connection
-            serverSend("OK:" + username + ":" + server.bannedPhrasesString);
-            server.broadcastClientList();
 
             receiveAndSend();
 
@@ -66,56 +76,62 @@ public class ClientHandler implements Runnable {
 
     // receive message from a client and distribute it to other clients
     private void receiveAndSend() throws IOException {
-        String message = serverGet();
-        while (message != null) {
-            boolean validMessage = false;
+        try {
+            String message = serverGet();
+            while (message != null) {
+                boolean validMessage = false;
 
-            while (!validMessage) {
+                while (!validMessage) {
 
-                for (MessageFilter filter : messageFilters) {
-                    Optional<String> errorMessage = filter.validate(message);
+                    for (MessageFilter filter : messageFilters) {
+                        Optional<String> errorMessage = filter.validate(message);
 
-                    if (errorMessage.isPresent()) {
-                        serverSend("ERROR: " + errorMessage.get());
-                        message = serverGet();
-                        //return if client disconnected
-                        if (message == null) {
-                            System.err.println("Client disconnected during message validation.");
+                        if (errorMessage.isPresent()) {
+                            serverSend("ERROR: " + errorMessage.get());
+                            message = serverGet();
+                            //return if client disconnected
+                            if (message == null) {
+                                System.err.println("Client disconnected during message validation.");
+                                return;
+                            }
+                            break;
+                        } else {
+                            validMessage = true;
+                        }
+                    }
+                }
+
+                String[] messageParts = message.split(":", 2);
+
+                if (messageParts.length < 2) {
+                    switch (message) {
+                        case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
+                        case "DISCONNECT" -> {
+                            disconnectClient();
                             return;
                         }
-                        //check again
-                        break;
-                    } else {
-                        validMessage = true;
+                        default -> System.err.println("Unknown message type: " + message);
+                    }
+                } else {
+                    String messageType = messageParts[0];
+                    String messageContent = messageParts[1];
+
+                    switch (messageType) {
+                        case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
+                        case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
+                        case "BROADCAST" -> server.broadcastMessage(username, messageContent);
+                        default -> System.err.println("Unknown message type: " + messageType);
+
                     }
                 }
             }
 
-            String[] messageParts = message.split(":", 2);
-
-            if (messageParts.length < 2) {
-                switch (message) {
-                    case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
-                    case "DISCONNECT" -> {
-                        disconnectClient();
-                        return;
-                    }
-                    default -> System.err.println("Unknown message type: " + message);
-                }
-            }
-
-            String messageType = messageParts[0];
-            String messageContent = messageParts[1];
-
-            switch (messageType) {
-                case "SEND_TO" -> server.sendToSpecificUsers(username, messageContent);
-                case "EXCLUDE" -> server.excludeSpecificUsers(username, messageContent);
-                case "BROADCAST" -> server.broadcastMessage(username, messageContent);
-                default -> System.err.println("Unknown message type: " + messageType);
-
-            }
-            message = serverGet();
+        } catch (IOException e) {
+            System.err.println("Client disconnected while reading messages.");
+            disconnectClient();
         }
+
+
     }
 
     private void disconnectClient() {

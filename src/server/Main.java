@@ -48,7 +48,7 @@ public class Main {
 
                 } catch (IOException e) {
                     System.err.println("Error when accepting client connection: " + e.getMessage());
-                    running = false; // Stop the server if we are unable to accept connections
+                    continue;
                 }
             }
 

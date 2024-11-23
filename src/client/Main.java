@@ -135,6 +135,7 @@ public class Main {
 
                 // Process the username
                 boolean success = client.processUsername(username);
+                System.out.println(success ? "Authorised" : "Unauthorised");
 
                 if (success) {
                     client.setAuthorized(true);
