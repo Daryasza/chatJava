@@ -62,7 +62,7 @@ public class ClientHandler implements Runnable {
                     serverSend("ERROR: Username already taken. Please try a different username.");
                 } else {
                     // confirm connection
-                    serverSend("OK:" + username + ":" + server.bannedPhrasesString);
+                    serverSend(MessageTypes.ServerConnected + ":" + username + ":" + server.bannedPhrasesString);
                     System.out.println("Client " + username + " connection confirmed");
                     server.broadcastClientList();
                 }

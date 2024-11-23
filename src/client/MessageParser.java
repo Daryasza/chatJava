@@ -24,7 +24,7 @@ public class MessageParser {
                 String sender = parts[0];
                 String content = parts[1];
 
-                return new BroadcastMessage(sender, content);
+                return new ChatMessage(sender, content);
             }
             case MessageTypes.SentToSpecific -> {
                 // format: "recipients:sender:content"
@@ -34,7 +34,7 @@ public class MessageParser {
                 String sender = parts[1];
                 String content = parts[2];
 
-                return new SentToSpecificMessage(recipients, sender, content);
+                return new ChatMessage(sender, content);
             }
             case MessageTypes.ExcludeRecipients -> {
                 // format: "excludedUsers:sender:content"
@@ -43,7 +43,7 @@ public class MessageParser {
                 String sender = parts[1];
                 String content = parts[2];
 
-                return new ExcludeRecipientsMessage(excludedUsers, sender, content);
+                return new ChatMessage(sender, content);
             }
             case MessageTypes.UserList -> {
                 // format: "users"
@@ -60,7 +60,7 @@ public class MessageParser {
                 return new ErrorMessage(messageContent);
                 // format: "error"
             }
-            case "OK" -> {
+            case MessageTypes.ServerConnected -> {
                 //format: "username:bannedPhrases"
                 String[] parts = messageContent.split(":", 2);
 

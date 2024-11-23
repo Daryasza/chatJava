@@ -27,9 +27,7 @@ public class GUIManager {
     protected JButton queryBannedPhrasesButton;
     protected JCheckBox excludeModeCheckBox;
 
-    private String currentUsername;
     private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("HH:mm");
-
 
     public GUIManager() throws IOException {
         setupGUI();
@@ -163,13 +161,6 @@ public class GUIManager {
         frame.add(rightPanel, BorderLayout.CENTER);
         frame.setVisible(true);
     }
-
-    public String getCurrentUsername() {
-        return currentUsername;
-    }
-
-
-
 
     public void updateClientList(Set<String> clients) {
         SwingUtilities.invokeLater(() -> {

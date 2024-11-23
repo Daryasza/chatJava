@@ -1,12 +1,12 @@
 package client.commands;
 
 import client.GUIManager;
-import client.messages.BroadcastMessage;
+import client.messages.ChatMessage;
 
-public class BroadcastMessageGUICommand extends GUICommand {
-    private final BroadcastMessage message;
+public class ChatMessageGUICommand extends GUICommand {
+    private final ChatMessage message;
 
-    public BroadcastMessageGUICommand(BroadcastMessage message, GUIManager guiManager) {
+    public ChatMessageGUICommand(ChatMessage message, GUIManager guiManager) {
         super(guiManager);
         this.message = message;
     }
