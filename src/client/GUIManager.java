@@ -1,13 +1,6 @@
 package client;
 
-
-//Use a background thread for receiving messages to avoid blocking the GUI
-// use SwingUtilities.invokeLater to update the UI safely
-
-//Fields: sender, recipients, content, and timestamp.
-
-//Features:
-//Handle system notifications like new client connections or disconnections.
+//TODO Handle system notifications like new client connections or disconnections.
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,11 +8,11 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.io.IOException;
 
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
 
 public class GUIManager {
     protected JFrame frame;
@@ -57,16 +50,19 @@ public class GUIManager {
         JButton clearSelectionButton = new JButton("Unselect all");
         FontMetrics fontMetrics = clearSelectionButton.getFontMetrics(clearSelectionButton.getFont());
         int textWidth = fontMetrics.stringWidth(clearSelectionButton.getText());
-        System.out.println(textWidth);
         clearSelectionButton.setPreferredSize(new Dimension(textWidth + (35), clearSelectionButton.getPreferredSize().height));
-        System.out.println(clearSelectionButton.getPreferredSize());
         clearSelectionButton.addActionListener(e -> {
             clientList.clearSelection();
             selectedUsers.clear();
         });
 
-        JPanel buttonWrapperPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        JPanel buttonWrapperPanel = new JPanel();
+        buttonWrapperPanel.setLayout(new BoxLayout(buttonWrapperPanel, BoxLayout.Y_AXIS));
         buttonWrapperPanel.add(clearSelectionButton);
+        buttonWrapperPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        buttonWrapperPanel.add(excludeModeCheckBox);
+        buttonWrapperPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
 
         // client list
         clientListModel = new DefaultListModel<>();
@@ -84,14 +80,16 @@ public class GUIManager {
         clientScrollPane.setPreferredSize(new Dimension(150, 0));
         JPanel clientPanel = new JPanel(new BorderLayout());
         JLabel clientTitle = new JLabel("Connected Users:", JLabel.CENTER);
-        clientTitle.setFont(new Font("Comics Sans", Font.BOLD, 14));
+        clientTitle.setFont(new Font("Dialog", Font.BOLD, 14));
         clientPanel.add(clientTitle, BorderLayout.NORTH);
         clientPanel.add(clientScrollPane, BorderLayout.CENTER);
-        clientPanel.setPreferredSize(new Dimension(150, 0));
         clientPanel.add(buttonWrapperPanel, BorderLayout.SOUTH);
+        clientPanel.setPreferredSize(new Dimension(150, 0));
 
         //query banned button
         queryBannedPhrasesButton = new JButton("Banned Phrases");
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(queryBannedPhrasesButton, BorderLayout.EAST);
 
         // message box
         messageListModel = new DefaultListModel<>();
@@ -99,8 +97,31 @@ public class GUIManager {
         messageList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane messageScrollPane = new JScrollPane(messageList);
 
+
         // input field
-        inputField = new JTextField();
+        inputField = new JTextField(20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (!isOpaque() && g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getBackground());
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+                }
+                super.paintComponent(g);
+            }
+
+            @Override
+            protected void paintBorder(Graphics g) {
+                if (g instanceof Graphics2D) {
+                    Graphics2D g2 = (Graphics2D) g;
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Color.GRAY);
+                    g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 15, 15);
+                }
+            }
+        };
+        inputField.setOpaque(false);
         inputField.setText("Type your message here...");
         inputField.setForeground(Color.LIGHT_GRAY);
         inputField.addFocusListener(new FocusAdapter() {
@@ -126,15 +147,19 @@ public class GUIManager {
 
         // input panel
         JPanel inputPanel = new JPanel(new BorderLayout());
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         inputPanel.add(inputField, BorderLayout.CENTER);
         inputPanel.add(sendButton, BorderLayout.EAST);
-        inputPanel.add(queryBannedPhrasesButton, BorderLayout.WEST);
-        inputPanel.add(excludeModeCheckBox, BorderLayout.NORTH);
+
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.add(topPanel, BorderLayout.NORTH);
+        rightPanel.add(messageScrollPane, BorderLayout.CENTER);
+        rightPanel.add(inputPanel, BorderLayout.SOUTH);
+
 
         // layout
-        frame.add(messageScrollPane, BorderLayout.CENTER);
-        frame.add(inputPanel, BorderLayout.SOUTH);
         frame.add(clientPanel, BorderLayout.WEST);
+        frame.add(rightPanel, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
@@ -171,7 +196,7 @@ public class GUIManager {
     }
 
     public void showAlertWindow(String message, String title) {
-        JOptionPane.showMessageDialog(frame, message, title, JOptionPane.PLAIN_MESSAGE);
+        JOptionPane.showMessageDialog(frame, message, title,  JOptionPane.PLAIN_MESSAGE);
     }
 
     public void setChatTitle(String username) {
@@ -180,12 +205,15 @@ public class GUIManager {
 
     public void showInstructions(String bannedPhrases) {
         String message = "<html><body style='font-family:Arial; font-size:10px; color:#2b2a2a;'>"
-                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 20px;'>Hello there! Nice to see you. </div>"
+                + "<div style='color:#2b2a2a; text-align: center; margin-top: 20px; margin-bottom: 20px;'><b>Hello there! Nice to see you.</b> </div>"
                 + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>To keep everyone's spirits up, please follow the rules: </div>"
                 + "<div style='text-align: left; margin-bottom: 5px;'> 1. Do not use the following phrases: " + bannedPhrases + "</div>"
-                + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'> 2. On Mondays, hold off on greeting with 'good morning' before noon.</div>"
-                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 10px;'>To skip messaging users you don’t like, just select them under &quot;Exclude Mod&quot;e.</div>"
-                + "<div style='color:#2b2a2a; text-align: center; margin-bottom: 20px;'> Enjoy chatting! </div>"
+                + "<div style='color:#2b2a2a; text-align: left;'> 2. On Mondays, hold off on greeting with 'good morning' before noon.</div>"
+                + "<div style='color:#2b2a2a; text-align: left; margin-top: 20px; margin-bottom: 20px;'>How to send messages: </div>"
+                + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>1. By default your messages are broadcast to all connected users</div>"
+                + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>2. To send messages to specified users just select them in the list of connected clients (using ⌘ if multiple)</div>"
+                + "<div style='color:#2b2a2a; text-align: left; '>3. To skip messaging users you don’t like, just select them under &quot;Exclude Mode&quot;.</div>"
+                + "<div style='color:#2b2a2a; text-align: center; margin-top: 20px;'> <b>Enjoy chatting!</b> </div>"
                 + "</body></html>";
 
         showAlertWindow(message, "How to Use the Chat");
