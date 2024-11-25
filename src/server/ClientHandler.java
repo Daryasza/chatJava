@@ -43,7 +43,7 @@ public class ClientHandler implements Runnable {
 
                 // client disconnected
                 if (username == null) {
-                    disconnectClient();
+                    break;
                 }
 
                 //validate according to requirements

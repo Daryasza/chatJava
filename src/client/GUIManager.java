@@ -201,9 +201,4 @@ public class GUIManager {
 
         showAlertWindow(message, "How to Use the Chat");
     }
-
-
-
-
-
 }

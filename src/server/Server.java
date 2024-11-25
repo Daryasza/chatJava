@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
     private final static String MessagePartsDelimiter = ":";
-    private int port;
-    private String serverName;
+    private final int port;
+    private final String serverName;
     private final Set<String> bannedPhrases = new HashSet<>();
     protected String bannedPhrasesString;
 

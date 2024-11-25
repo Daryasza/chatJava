@@ -1,5 +1,7 @@
 package client;
 
+//todo fix message sending breakage after reconnection
+
 import client.messages.*;
 import config.ConfigLoader;
 
@@ -69,6 +71,7 @@ public final class Client {
         new Thread(() -> {
             try {
                 while (true) {
+                    System.out.println(isSocketValid());
                     if (!isSocketValid()) {
                         reconnect();
                     }
@@ -132,7 +135,16 @@ public final class Client {
     }
 
     private boolean isSocketValid() {
-        return socket != null && !socket.isClosed();
+        boolean isValid = false;
+        try {
+            //send 1 byte of urgent data (out of queue)
+            socket.sendUrgentData(0xFF);
+            isValid = true;
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+
+        return socket != null && !socket.isClosed() && isValid;
     }
 
     // sendBroadcastMessage, sendMessageToSpecified, sendMessageWithExclusion can not be sent before authorising
@@ -176,6 +188,7 @@ public final class Client {
 
     //helper functions
     private void sendToServer(String str) {
+        //not null or empty string
         if (str != null && !str.isEmpty()) {
             writer.println(str);
         }

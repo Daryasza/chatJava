@@ -10,24 +10,19 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
-
+    public static void main(String[] args) {
         Server server = new Server("src/config/server.txt");
         System.out.println(server.getServerName() + " started on port " + server.getPort());
         System.out.println("Banned Phrases: " + server.bannedPhrasesString);
 
         // try with resources - automatically calls serverSocket.close() when the try block exits (serverSocket implements AutoCloseable)
         try (ServerSocket serverSocket = new ServerSocket(server.getPort())) {
-
-            boolean running = true;
-
             // loop for accepting client connections
-            while (running) {
+            while (true) {
                 try {
                     //blocking call - NEXT LINES WILL NOT be executed until clientSocket is accepted - otherwise catch block
                     Socket clientSocket = serverSocket.accept();
 
-                    // Create message filters for each client connection
                     ArrayList<MessageFilter> filters = new ArrayList<>();
                     filters.add(new BannedPhrasesMessageFilter(server.getBannedPhrases()));
                     filters.add(new GoodMorningMessageFilter());
@@ -46,6 +41,7 @@ public class Main {
 
                 } catch (IOException e) {
                     System.err.println("Error when accepting client connection: " + e.getMessage());
+                    break;
                 }
             }
 

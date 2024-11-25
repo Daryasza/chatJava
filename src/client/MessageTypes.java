@@ -12,4 +12,6 @@ public final class MessageTypes {
     public static final String Sent = "sent";
     public static final String Dicsonnect = "disconnect";
     public static final String Instructions = "instructions";
+    public static final String UserJoined = "joined-user";
+    public static final String UserLeft = "left-user";
 }
