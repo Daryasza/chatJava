@@ -41,12 +41,12 @@ public class Main {
 
                 } catch (IOException e) {
                     System.err.println("Error when accepting client connection: " + e.getMessage());
-                    break;
                 }
             }
 
         } catch (IOException e) {
             System.err.println("Error creating ServerSocket: " + e.getMessage());
+
         } finally {
             System.out.println("Server is shutting down...");
         }

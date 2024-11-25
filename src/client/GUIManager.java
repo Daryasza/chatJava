@@ -1,6 +1,7 @@
 package client;
 
 //TODO Handle system notifications like new client connections or disconnections.
+// block user input until reconnected to server
 
 import javax.swing.*;
 import java.awt.*;

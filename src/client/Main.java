@@ -5,7 +5,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 public class Main {
@@ -20,9 +19,7 @@ public class Main {
             guiManager.frame.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
-                if (client != null) {
                     client.disconnectFromServer();
-                }
                 }
             });
 
@@ -37,9 +34,8 @@ public class Main {
             guiManager.sendButton.addActionListener(e -> handleSendingMessage(guiManager.selectedUsers, guiManager, client));
             guiManager.inputField.addActionListener(e -> handleSendingMessage(guiManager.selectedUsers, guiManager, client));
             guiManager.queryBannedPhrasesButton.addActionListener(e -> {
-                if (client != null && client.getAuthorized()) {
+                if (client.getAuthorized()) {
                     client.queryBannedPhrases();
-
                     return;
                 }
 
@@ -56,7 +52,6 @@ public class Main {
             while (!client.getAuthorized()) {
                 // prompt for username
                 String username = null;
-
                 while (username == null || username.trim().isEmpty()) {
                     username = JOptionPane.showInputDialog(guiManager.frame, "Enter your username:", "Username", JOptionPane.PLAIN_MESSAGE);
                     //if user closed the window
@@ -67,10 +62,8 @@ public class Main {
                 }
 
                 boolean success = client.processUsername(username.trim());
-
                 if (success) {
                     client.setAuthorized(true);
-
                     return;
                 }
 
@@ -82,12 +75,10 @@ public class Main {
         }
     }
 
-
     private static void handleSendingMessage(Set<String> selectedUsers, GUIManager guiManager, Client client) {
         if (selectedUsers == null) {
             selectedUsers = new HashSet<>();
         }
-
         String message = guiManager.inputField.getText().trim();
 
         if (message.isEmpty() || message.equals("Type your message here...")) {
@@ -95,7 +86,6 @@ public class Main {
         }
 
         if (client != null && client.getAuthorized()) {
-            System.out.println(message + "1");
             if (selectedUsers.isEmpty()) {
                 // broadcast message
                 client.sendBroadcastMessage(message);

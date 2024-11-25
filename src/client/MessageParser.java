@@ -6,8 +6,7 @@ import java.util.Set;
 
 public class MessageParser {
     public static MessageBase parseMessage(String serverMessage) {
-        System.out.println("serverMessage= " + serverMessage);
-        //format: "MESSAGE_TYPE:content"
+        //format: "Message.Type:content"
         String[] messageParts = serverMessage.split(":", 2);
 
         if (messageParts.length < 2) {
