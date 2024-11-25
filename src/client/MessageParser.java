@@ -42,13 +42,17 @@ public class MessageParser {
                 // format: "error"
             }
             case MessageTypes.ServerConnected -> {
-                //format: "username:bannedPhrases"
+                //format: "username"
+                return new ServerConnectedMessage(messageContent);
+            }
+            case MessageTypes.Instructions -> {
+                // format: "bannedPhrases:instructions"
                 String[] parts = messageContent.split(":", 2);
 
-                String username = parts[0];
-                String bannedPhrases = parts[1];
+                String bannedPhrases = parts[0];
+                String instructions = parts[1];
 
-                return new ServerConnectedMessage(username, bannedPhrases);
+                return new InstructionsMessage(bannedPhrases, instructions);
             }
         }
 

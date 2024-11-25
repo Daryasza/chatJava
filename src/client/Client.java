@@ -41,7 +41,7 @@ public final class Client {
     //disconnecting
     public void disconnectFromServer() {
         try {
-            sendToServer("DISCONNECT");
+            sendToServer(MessageTypes.Dicsonnect);
             socket.close();
             setAuthorized(false);
         } catch (IOException e) {
@@ -171,7 +171,7 @@ public final class Client {
 
     //query before authorisation
     public void queryBannedPhrases() {
-        sendToServer("QUERY_BANNED");
+        sendToServer(MessageTypes.GetBannedPhrases);
     }
 
     //helper functions
@@ -181,7 +181,7 @@ public final class Client {
         }
     }
 
-    private Optional<String> getFromServer() {
+    Optional<String> getFromServer() {
         try {
             String message = reader.readLine();
 

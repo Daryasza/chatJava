@@ -1,7 +1,5 @@
 package server;
 
-
-
 import server.messageFilters.BannedPhrasesMessageFilter;
 import server.messageFilters.GoodMorningMessageFilter;
 import server.messageFilters.MessageFilter;

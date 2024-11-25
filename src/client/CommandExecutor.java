@@ -17,6 +17,7 @@ public class CommandExecutor {
             case UserListMessage userListMessage -> new UpdateUserListGUICommand(userListMessage, guiManager);
             case ErrorMessage errorMessage -> new ErrorGUICommand(errorMessage, guiManager);
             case BannedPhrasesMessage bannedPhrases -> new ShowBannedPhrasesGUICommand(bannedPhrases, guiManager);
+            case InstructionsMessage instructionsMessage -> new ShowInstructionsCommand(instructionsMessage, guiManager);
         };
 
         cmd.execute();

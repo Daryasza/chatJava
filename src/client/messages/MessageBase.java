@@ -2,8 +2,7 @@ package client.messages;
 
 import java.util.Date;
 
-public sealed abstract class MessageBase permits BannedPhrasesMessage, ChatMessage, ErrorMessage,
-        ServerConnectedMessage, UserListMessage {
+public sealed abstract class MessageBase permits BannedPhrasesMessage, ChatMessage, ErrorMessage, InstructionsMessage, ServerConnectedMessage, UserListMessage {
 
     public final Date date;
 

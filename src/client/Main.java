@@ -5,13 +5,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         GUIManager guiManager = new GUIManager();
         Client client;
-
 
         try {
             CommandExecutor commandExecutor = new CommandExecutor(guiManager);
@@ -25,6 +25,11 @@ public class Main {
                 }
                 }
             });
+
+            client.getFromServer().ifPresentOrElse(
+                    message -> commandExecutor.dispatchCommand(MessageParser.parseMessage(message)),
+                    () -> System.out.println("Command not recognised")
+            );
 
             authoriseAtServer(guiManager, client);
             client.startReadingFromServer();

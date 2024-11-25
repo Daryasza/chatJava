@@ -14,6 +14,5 @@ public class ServerConnectedGUICommand extends GUICommand {
     @Override
     public void execute() {
         guiManager.setChatTitle(message.getUsername());
-        guiManager.showInstructions(message.getContent());
     }
 }

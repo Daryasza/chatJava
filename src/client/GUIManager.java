@@ -186,12 +186,12 @@ public class GUIManager {
         frame.setTitle("BibaChat: " + username);
     }
 
-    public void showInstructions(String bannedPhrases) {
+    public void showInstructions(String bannedPhrases, String instructions) {
         String message = "<html><body style='font-family:Arial; font-size:10px; color:#2b2a2a;'>"
                 + "<div style='color:#2b2a2a; text-align: center; margin-top: 20px; margin-bottom: 20px;'><b>Hello there! Nice to see you.</b> </div>"
                 + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>To keep everyone's spirits up, please follow the rules: </div>"
                 + "<div style='text-align: left; margin-bottom: 5px;'> 1. Do not use the following phrases: " + bannedPhrases + "</div>"
-                + "<div style='color:#2b2a2a; text-align: left;'> 2. On Mondays, hold off on greeting with 'good morning' before noon.</div>"
+                + "<div style='color:#2b2a2a; text-align: left;'> 2. Hold off on greeting with " + instructions + "." +"</div>"
                 + "<div style='color:#2b2a2a; text-align: left; margin-top: 20px; margin-bottom: 20px;'>How to send messages: </div>"
                 + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>1. By default your messages are broadcast to all connected users</div>"
                 + "<div style='color:#2b2a2a; text-align: left; margin-bottom: 10px;'>2. To send messages to specified users just select them in the list of connected clients (using ⌘ if multiple)</div>"

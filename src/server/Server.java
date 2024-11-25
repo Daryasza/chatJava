@@ -57,9 +57,8 @@ public class Server {
         String message = String.join(MessagePartsDelimiter, MessageTypes.UserList, clientList);
 
         for (ConnectedClients client : getUserMap().values()) {
-            PrintWriter out = client.out();
             try{
-                out.println(message);
+                client.out().println(message);
             } catch (Exception e) {
                 System.err.println("Failed to send broadcast message to port: " + client.port() + ": " + e.getMessage());
             }
@@ -70,7 +69,6 @@ public class Server {
         String message = String.join(MessagePartsDelimiter, MessageTypes.BannedPhrases, bannedPhrasesString);
 
         try {
-            //send the message to PrintWriter of every connected client
             out.println(message);
         } catch (Exception e) {
             System.err.println("Failed to send banned phrases" + e.getMessage());
@@ -78,7 +76,6 @@ public class Server {
     }
 
     protected void broadcastMessage(String username, String message) {
-
         String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Sent, username, message);
 
         for (ConnectedClients client : getUserMap().values()) {
@@ -92,6 +89,7 @@ public class Server {
     }
 
     void sendToSpecificUsers(String username, String message) {
+        //format: recipientsString, message
         String[] parts = message.split(":", 2);
         Set<String> targetUsers = Set.of(parts[0].split(","));
         String content = parts[1];
@@ -111,10 +109,12 @@ public class Server {
     }
 
     void excludeSpecificUsers(String username, String message) {
+        //format: excludedRecipientsString, message
         String[] parts = message.split(":", 2);
         Set<String> excludedUsersSet = Set.of(parts[0].split(","));
 
         String content = parts[1];
+        //join by delimiter as first argument
         String formattedMessage = String.join(MessagePartsDelimiter, MessageTypes.Sent, username, content);
 
         for (Map.Entry<String, ConnectedClients> entry : getUserMap().entrySet()) {

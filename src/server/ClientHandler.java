@@ -32,38 +32,40 @@ public class ClientHandler implements Runnable {
             reader = new BufferedReader(inputStreamReader);
             writer = new PrintWriter(clientSocket.getOutputStream(), true);
 
-            ConnectedClients newClient = new ConnectedClients(clientSocket.getPort(), writer);
+            //clientSocket.getLocalPort() getLocalPort returns port number on the client side
+            ConnectedClients newClient = new ConnectedClients(clientSocket.getLocalPort(), writer);
+            serverSend(MessageTypes.Instructions + ":" + server.bannedPhrasesString + ":" + "'good morning' before noon on Mondays");
 
             boolean validUsername = false;
             while (!validUsername) {
                 // read username
                 username = serverGet();
 
-                System.out.println("Client " + username + " connected");
+                // client disconnected
+                if (username == null) {
+                    disconnectClient();
+                }
 
                 //validate according to requirements
                 Optional<String> error = UsernameValidator.getError(username, server.getBannedPhrases());
 
                 if (error.isPresent()) {
-                    // Send the validation error back to the client
-                    serverSend(MessageTypes.Error + error.get());
-
+                    // send the validation error back to the client
+                    serverSend(MessageTypes.Error + ":" + error.get());
+                    //wait for next message from client
                     continue;
                 }
 
-                    // register the client
-                    //to prevent from duplicating usernames ConcurrentHashMap.putIfAbsent() used
+                // register the client
+                //to prevent from duplicating usernames ConcurrentHashMap.putIfAbsent() used
                 validUsername = server.addUser(username, newClient);
-                System.out.println("Client " + username + " added");
-                System.out.println(validUsername);
 
                 if (!validUsername) {
-                    // If the username already exists, inform the client
-                    serverSend("ERROR: Username already taken. Please try a different username.");
+                    // if the username already exists, inform the client
+                    serverSend(MessageTypes.Error + ": Username already taken. Please try a different username.");
                 } else {
                     // confirm connection
-                    serverSend(MessageTypes.ServerConnected + ":" + username + ":" + server.bannedPhrasesString);
-                    System.out.println("Client " + username + " connection confirmed");
+                    serverSend(MessageTypes.ServerConnected + ":" + username);
                     server.broadcastClientList();
                 }
             }
@@ -81,7 +83,7 @@ public class ClientHandler implements Runnable {
     private void receiveAndSend() throws IOException {
         try {
             String message = serverGet();
-
+            // BufferedReader.readLine() gets null if client calls clientSocket.close()
             while (message != null) {
                 boolean validMessage = true;
 
@@ -109,8 +111,8 @@ public class ClientHandler implements Runnable {
 
                     if (messageParts.length < 2) {
                         switch (message) {
-                            case "QUERY_BANNED" -> server.sendBannedPhrases(writer);
-                            case "DISCONNECT" -> {
+                            case MessageTypes.GetBannedPhrases -> server.sendBannedPhrases(writer);
+                            case MessageTypes.Dicsonnect -> {
                                 disconnectClient();
                                 return;
                             }
@@ -138,25 +140,23 @@ public class ClientHandler implements Runnable {
     }
 
     private void disconnectClient() {
-        try {
+        try{
             if (clientSocket != null && !clientSocket.isClosed()) {
                 clientSocket.close();
             }
-
-            if (username != null) {
-                server.removeUser(username);
-                server.broadcastClientList();
-            }
-
-            System.out.println("Client disconnected.");
-
         } catch (IOException e) {
-            System.err.println("Error closing client socket: " + e.getMessage());
+            System.err.println("Client socket is already closed.");
         }
+
+        if (username != null) {
+            server.removeUser(username);
+            server.broadcastClientList();
+        }
+
+        System.out.println("Client disconnected.");
     }
 
     private void serverSend(String message) {
-        System.out.println(message);
         writer.println(message);
     }
 
