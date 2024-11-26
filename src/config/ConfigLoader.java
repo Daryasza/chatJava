@@ -36,7 +36,7 @@ public class ConfigLoader {
                         serverName = value;
                         break;
                     }
-                    case "ip": {
+                    case "host": {
                         host = value;
                         break;
                     }
