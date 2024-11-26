@@ -57,6 +57,7 @@ public final class Client {
             try {
                 Thread.sleep(1000);
                 connectToServer();
+                sendToServer(currentUsername.orElse(""));
                 System.out.println("Reconnected to the server.");
                 break;
             } catch (IOException | InterruptedException e) {
@@ -69,7 +70,6 @@ public final class Client {
     // separate thread for reading server messages
     void startReadingFromServer() {
         new Thread(() -> {
-            try {
                 while (true) {
                     System.out.println(isSocketValid());
                     if (!isSocketValid()) {
@@ -88,9 +88,6 @@ public final class Client {
                             () -> System.err.println("Server returned an empty message")
                     );
                 }
-            } finally {
-                disconnectFromServer();
-            }
         }).start();
     }
 
@@ -105,7 +102,7 @@ public final class Client {
         }
 
         String content = response.get();
-        System.out.println(content);
+
         try {
             MessageBase messageBase = MessageParser.parseMessage(content);
             commandExecutor.dispatchCommand(messageBase);
